@@ -11,8 +11,8 @@ import time
 
 # All tests require Windows
 if sys.platform != "win32":
-    print("SKIP: SelfConnect SDK requires Windows")
-    sys.exit(0)
+    import pytest
+    pytest.skip("SelfConnect Win32 integration tests require Windows", allow_module_level=True)
 
 from self_connect import (
     __version__, WindowTarget, WindowPool,

@@ -1,7 +1,9 @@
-# SelfConnect SDK v0.10.0
+# SelfConnect Mac SDK v0.10.0
 
-**OS-native bridge between AI agents and Windows desktop apps.**  
-PostMessage + PrintWindow. No browser. No accessibility layer. No API between agents.
+**OS-native bridge between AI agents and desktop apps, adapted for macOS.**  
+The original Win32 backend is preserved on Windows. On macOS, the core API imports
+cleanly and uses native AppleScript, `screencapture`, `pbcopy`, and `pbpaste`
+fallbacks for window discovery, focus, text input, screenshots, and clipboard access.
 
 ```python
 from self_connect import list_windows, send_string, save_capture
@@ -21,11 +23,33 @@ ones automatically when an operation requires 3+ retries.
 
 ---
 
+## macOS Status
+
+This repo is the Mac-compatible variant intended for `selfconnect-mac`. The Windows
+`PostMessage`/`PrintWindow` behavior still runs when imported on Windows, while macOS
+gets best-effort foreground automation through System Events.
+
+macOS requirements:
+- Python 3.10+
+- Pillow and psutil
+- Accessibility permission for the terminal app running Python if you want window
+  enumeration, focus, keyboard input, clicking, or resizing
+- Screen Recording permission for screenshots through `screencapture`
+
+Verified locally on macOS:
+
+```bash
+python3 -m venv .venv
+.venv/bin/python -m pip install -e . pytest pytest-asyncio pydantic fastapi httpx
+.venv/bin/python -m pytest -q
+# 151 passed, 9 skipped
+```
+
 ## What It Does
 
 SelfConnect lets a frontier AI model (Claude, Codex, or any CLI agent) control Windows
-desktop applications using raw Win32 APIs — and communicate with *other AI agents* through
-the same channel.
+desktop applications using raw Win32 APIs, and now exposes compatible macOS fallbacks for
+the same high-level Python API.
 
 ```
 AI Agent A                         AI Agent B

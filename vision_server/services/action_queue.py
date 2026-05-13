@@ -13,12 +13,36 @@ Focus verification: verify active window has focus before send_string
 Interruptible: check _paused flag between steps
 """
 import asyncio
+import ctypes
 import logging
+import os
 import uuid
 from collections import deque
 from typing import Optional
 
 logger = logging.getLogger(__name__)
+
+
+class _UnavailableWin32Function:
+    def __call__(self, *args, **kwargs):
+        return 0
+
+
+class _UnavailableWin32Library:
+    def __getattr__(self, _name: str):
+        return _UnavailableWin32Function()
+
+
+class _UnavailableWin32Root:
+    def __init__(self):
+        self.user32 = _UnavailableWin32Library()
+
+    def __getattr__(self, _name: str):
+        return _UnavailableWin32Library()
+
+
+if os.name != "nt" and not hasattr(ctypes, "windll"):
+    ctypes.windll = _UnavailableWin32Root()  # type: ignore[attr-defined]
 
 _queue: deque = deque()
 _history: list = []

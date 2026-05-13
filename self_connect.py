@@ -82,11 +82,18 @@ import hashlib as _hashlib
 import json as _json
 import os
 import subprocess as _subprocess
+import sys
 import threading
 import time
 import uuid as _uuid
 from dataclasses import asdict, dataclass, field
 from typing import Optional
+
+_IS_WINDOWS = os.name == "nt"
+_IS_MAC = sys.platform == "darwin"
+
+if not hasattr(ctypes, "WINFUNCTYPE"):
+    ctypes.WINFUNCTYPE = ctypes.CFUNCTYPE  # type: ignore[attr-defined]
 
 # ── Win32 constants ───────────────────────────────────────────────────────────
 INPUT_KEYBOARD       = 1
@@ -166,9 +173,208 @@ WT_INPUT_CLASS = "Windows.UI.Input.InputSite.WindowClass"
 # The foreground independence of PostMessage to ConPTY windows is the foundation
 # of Patent Claim 2: AI-to-AI instruction via background window keyboard injection.
 
-user32   = ctypes.windll.user32
-kernel32 = ctypes.windll.kernel32
-gdi32    = ctypes.windll.gdi32
+class _UnavailableWin32Function:
+    """No-op callable used so non-Windows imports keep pure-Python APIs usable."""
+
+    restype = None
+    argtypes = None
+
+    def __call__(self, *args, **kwargs):
+        return 0
+
+
+class _UnavailableWin32Library:
+    def __getattr__(self, _name: str):
+        return _UnavailableWin32Function()
+
+
+if _IS_WINDOWS:
+    user32   = ctypes.windll.user32
+    kernel32 = ctypes.windll.kernel32
+    gdi32    = ctypes.windll.gdi32
+else:
+    user32 = _UnavailableWin32Library()
+    kernel32 = _UnavailableWin32Library()
+    gdi32 = _UnavailableWin32Library()
+
+_MAC_WINDOW_CACHE: dict[int, "WindowTarget"] = {}
+
+
+def _mac_run_osascript(script: str) -> str:
+    try:
+        proc = _subprocess.run(
+            ["osascript", "-e", script],
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+    except Exception:
+        return ""
+    return proc.stdout.strip() if proc.returncode == 0 else ""
+
+
+def _mac_window_id(app_name: str, pid: int, title: str, index: int) -> int:
+    key = f"{pid}:{app_name}:{index}:{title}".encode("utf-8", "replace")
+    return int.from_bytes(_hashlib.sha1(key).digest()[:7], "big")
+
+
+def _mac_terminal_windows() -> list["WindowTarget"]:
+    pid_out = _mac_run_osascript(
+        'tell application "System Events" to get unix id of application process "Terminal"'
+    )
+    try:
+        pid = int(pid_out)
+    except ValueError:
+        return []
+    script = r'''
+set out to ""
+tell application "Terminal"
+  repeat with w in windows
+    set out to out & (id of w as text) & "|||" & (name of w) & linefeed
+  end repeat
+end tell
+return out
+'''
+    out = _mac_run_osascript(script)
+    windows: list[WindowTarget] = []
+    for line in out.splitlines():
+        parts = line.split("|||", 1)
+        if len(parts) != 2:
+            continue
+        hwnd_s, title = parts
+        try:
+            hwnd = int(hwnd_s)
+        except ValueError:
+            continue
+        target = WindowTarget(
+            hwnd=hwnd,
+            title=title,
+            class_name="macOS.TerminalWindow",
+            pid=pid,
+            exe_name="Terminal",
+        )
+        windows.append(target)
+    return windows
+
+
+def _mac_list_windows() -> list["WindowTarget"]:
+    script = r'''
+set out to ""
+tell application "System Events"
+  repeat with p in (application processes whose visible is true)
+    set appName to name of p
+    set appPid to unix id of p
+    set windowIndex to 0
+    repeat with w in windows of p
+      set windowIndex to windowIndex + 1
+      set windowTitle to name of w
+      if windowTitle is not "" then
+        set out to out & appName & tab & appPid & tab & windowIndex & tab & windowTitle & linefeed
+      end if
+    end repeat
+  end repeat
+end tell
+return out
+'''
+    out = _mac_run_osascript(script)
+    windows: list[WindowTarget] = []
+    _MAC_WINDOW_CACHE.clear()
+    for line in out.splitlines():
+        parts = line.split("\t", 3)
+        if len(parts) != 4:
+            continue
+        app_name, pid_s, index_s, title = parts
+        try:
+            pid = int(pid_s)
+            index = int(index_s)
+        except ValueError:
+            continue
+        hwnd = _mac_window_id(app_name, pid, title, index)
+        target = WindowTarget(
+            hwnd=hwnd,
+            title=title,
+            class_name="macOS.Window",
+            pid=pid,
+            exe_name=app_name,
+        )
+        windows.append(target)
+        _MAC_WINDOW_CACHE[hwnd] = target
+    terminal_windows = _mac_terminal_windows()
+    if terminal_windows:
+        windows = [w for w in windows if w.exe_name != "Terminal"]
+        windows.extend(terminal_windows)
+        for target in terminal_windows:
+            _MAC_WINDOW_CACHE[target.hwnd] = target
+    return windows
+
+
+def _mac_target(hwnd: int) -> Optional["WindowTarget"]:
+    target = _MAC_WINDOW_CACHE.get(hwnd)
+    if target:
+        return target
+    for win in _mac_list_windows():
+        if win.hwnd == hwnd:
+            return win
+    return None
+
+
+def _mac_escape_applescript_text(text: str) -> str:
+    return text.replace("\\", "\\\\").replace('"', '\\"')
+
+
+def _mac_focus_target(target: "WindowTarget") -> bool:
+    script = f'''
+tell application "{_mac_escape_applescript_text(target.exe_name)}" to activate
+tell application "System Events"
+  tell process "{_mac_escape_applescript_text(target.exe_name)}"
+    set frontmost to true
+    repeat with w in windows
+      if name of w is "{_mac_escape_applescript_text(target.title)}" then
+        try
+          perform action "AXRaise" of w
+        end try
+        try
+          set value of attribute "AXMain" of w to true
+        end try
+        return "ok"
+      end if
+    end repeat
+  end tell
+end tell
+return ""
+'''
+    return _mac_run_osascript(script) == "ok"
+
+
+def _mac_send_string(target: "WindowTarget", text: str, char_delay: float = 0.05) -> None:
+    app_name = target.exe_name or target.title
+    if target.exe_name == "Terminal":
+        chunks = text.replace("\r", "\n").split("\n")
+        for chunk in chunks:
+            if not chunk:
+                continue
+            script = (
+                f'tell application "Terminal" to do script '
+                f'"{_mac_escape_applescript_text(chunk)}" '
+                f'in selected tab of window id {target.hwnd}'
+            )
+            _mac_run_osascript(script)
+            time.sleep(max(char_delay, 0.02) * len(chunk))
+        return
+    _mac_focus_target(target)
+    chunks = text.replace("\r", "\n").split("\n")
+    for index, chunk in enumerate(chunks):
+        if chunk:
+            script = (
+                f'tell application "{_mac_escape_applescript_text(app_name)}" to activate\n'
+                f'tell application "System Events" to keystroke "{_mac_escape_applescript_text(chunk)}"'
+            )
+            _mac_run_osascript(script)
+            time.sleep(max(char_delay, 0.02) * len(chunk))
+        if index < len(chunks) - 1:
+            _mac_run_osascript('tell application "System Events" to key code 36')
+            time.sleep(char_delay)
 
 
 # ── ctypes structures ─────────────────────────────────────────────────────────
@@ -214,9 +420,11 @@ class WindowTarget:
     exe_name:   str = ""
 
     def is_uwp_terminal(self) -> bool:
-        return self.class_name == WT_HOST_CLASS
+        return _IS_WINDOWS and self.class_name == WT_HOST_CLASS
 
     def is_valid(self) -> bool:
+        if _IS_MAC:
+            return _mac_target(self.hwnd) is not None
         return bool(user32.IsWindow(self.hwnd))
 
     def __str__(self):
@@ -226,12 +434,18 @@ class WindowTarget:
 
 # ── Window helpers ────────────────────────────────────────────────────────────
 def _get_class_name(hwnd: int) -> str:
+    if _IS_MAC:
+        target = _mac_target(hwnd)
+        return target.class_name if target else ""
     buf = ctypes.create_unicode_buffer(256)
     user32.GetClassNameW(hwnd, buf, 256)
     return buf.value
 
 
 def _get_window_title(hwnd: int) -> str:
+    if _IS_MAC:
+        target = _mac_target(hwnd)
+        return target.title if target else ""
     length = user32.GetWindowTextLengthW(hwnd)
     if not length:
         return ""
@@ -241,6 +455,9 @@ def _get_window_title(hwnd: int) -> str:
 
 
 def _get_pid(hwnd: int) -> int:
+    if _IS_MAC:
+        target = _mac_target(hwnd)
+        return target.pid if target else 0
     pid = ctypes.c_ulong(0)
     user32.GetWindowThreadProcessId(hwnd, ctypes.byref(pid))
     return pid.value
@@ -268,12 +485,16 @@ def _get_exe_name(pid: int) -> str:
 
 def get_own_terminal_pid() -> int:
     """PID of the console window hosting this script (for self-exclusion)."""
+    if _IS_MAC:
+        return os.getpid()
     own_hwnd = kernel32.GetConsoleWindow()
     return _get_pid(own_hwnd) if own_hwnd else 0
 
 
 def list_windows() -> list[WindowTarget]:
     """Return all visible top-level windows as WindowTarget objects."""
+    if _IS_MAC:
+        return _mac_list_windows()
     results: list[WindowTarget] = []
     WNDENUMPROC = ctypes.WINFUNCTYPE(ctypes.c_bool, ctypes.c_int, ctypes.c_int)
 
@@ -295,6 +516,8 @@ def list_windows() -> list[WindowTarget]:
 
 def find_child_by_class(parent_hwnd: int, target_class: str) -> int:
     """Return first child window matching target_class, or 0."""
+    if _IS_MAC:
+        return 0
     found = ctypes.c_int(0)
     WNDENUMPROC = ctypes.WINFUNCTYPE(ctypes.c_bool, ctypes.c_int, ctypes.c_int)
 
@@ -341,6 +564,11 @@ def find_target(
 # ── Focus ─────────────────────────────────────────────────────────────────────
 def focus_window(hwnd: int) -> bool:
     """Bring a window to foreground using AttachThreadInput workaround."""
+    if _IS_MAC:
+        target = _mac_target(hwnd)
+        if not target:
+            return False
+        return _mac_focus_target(target)
     try:
         fg     = user32.GetForegroundWindow()
         fg_tid = user32.GetWindowThreadProcessId(fg, None)
@@ -410,6 +638,9 @@ def send_string(target: WindowTarget, text: str, char_delay: float = 0.05) -> No
     Verified: one Claude session can inject text into another Claude session's
     terminal window without stealing foreground focus (2026-04-30 live proof).
     """
+    if _IS_MAC:
+        _mac_send_string(target, text, char_delay)
+        return
     if target.is_uwp_terminal():
         input_site = find_child_by_class(target.hwnd, WT_INPUT_CLASS)
         delivery = input_site if input_site else target.hwnd
@@ -444,6 +675,8 @@ def _resolve_vk(key: str) -> int:
     if low in _VK_MAP:
         return _VK_MAP[low]
     if len(low) == 1:
+        if _IS_MAC:
+            return ord(low)
         return user32.VkKeyScanW(ord(low)) & 0xFF
     raise ValueError(f"Unknown key: {key!r}")
 
@@ -460,6 +693,29 @@ def send_keys(*keys: str) -> None:
         send_keys("f5")               # F5
     """
     if not keys:
+        return
+    if _IS_MAC:
+        key_map = {
+            "enter": 36, "return": 36, "tab": 48, "esc": 53, "escape": 53,
+            "backspace": 51, "delete": 117, "up": 126, "down": 125,
+            "left": 123, "right": 124, "home": 115, "end": 119,
+            "pgup": 116, "pageup": 116, "pgdn": 121, "pagedown": 121,
+            "space": 49,
+        }
+        modifiers = {
+            "ctrl": "control down", "control": "control down",
+            "shift": "shift down", "alt": "option down", "option": "option down",
+            "cmd": "command down", "command": "command down",
+        }
+        mods = [modifiers[k.lower()] for k in keys[:-1] if k.lower() in modifiers]
+        final = keys[-1].lower()
+        using = f" using {{{', '.join(mods)}}}" if mods else ""
+        if final in key_map:
+            _mac_run_osascript(f'tell application "System Events" to key code {key_map[final]}{using}')
+        elif len(final) == 1:
+            _mac_run_osascript(
+                f'tell application "System Events" to keystroke "{_mac_escape_applescript_text(final)}"{using}'
+            )
         return
     vks = [_resolve_vk(k) for k in keys]
     extra = ctypes.pointer(ctypes.c_ulong(0))
@@ -529,6 +785,14 @@ def get_text_uia(hwnd: int) -> str:
         t = find_target('Notepad')
         text = get_text_uia(t.hwnd)
     """
+    if _IS_MAC:
+        target = _mac_target(hwnd)
+        if target and target.exe_name == "Terminal":
+            return _mac_run_osascript(
+                f'tell application "Terminal" to get contents of selected tab of window id {target.hwnd}'
+            )
+        return ""
+
     # Strategy 1: pywinauto
     try:
         import pythoncom as _pcom  # type: ignore
@@ -607,6 +871,25 @@ def get_text_uia(hwnd: int) -> str:
 # ── Window management ────────────────────────────────────────────────────────
 def get_window_rect(hwnd: int) -> "tuple[int, int, int, int]":
     """Get window position and size as (x, y, width, height)."""
+    if _IS_MAC:
+        target = _mac_target(hwnd)
+        if not target:
+            return (0, 0, 0, 0)
+        script = f'''
+tell application "System Events"
+  tell process "{_mac_escape_applescript_text(target.exe_name)}"
+    set p to position of window 1
+    set s to size of window 1
+    return (item 1 of p as text) & "," & (item 2 of p as text) & "," & (item 1 of s as text) & "," & (item 2 of s as text)
+  end tell
+end tell
+'''
+        out = _mac_run_osascript(script)
+        try:
+            x, y, w, h = [int(float(part.strip())) for part in out.split(",")]
+            return (x, y, w, h)
+        except Exception:
+            return (0, 0, 0, 0)
     rect = wintypes.RECT()
     user32.GetWindowRect(hwnd, ctypes.byref(rect))
     return (rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top)
@@ -614,26 +897,76 @@ def get_window_rect(hwnd: int) -> "tuple[int, int, int, int]":
 
 def move_window(hwnd: int, x: int, y: int) -> bool:
     """Move a window to (x, y) without changing its size."""
+    if _IS_MAC:
+        target = _mac_target(hwnd)
+        if not target:
+            return False
+        script = f'''
+tell application "System Events"
+  tell process "{_mac_escape_applescript_text(target.exe_name)}"
+    set position of window 1 to {{{x}, {y}}}
+  end tell
+end tell
+'''
+        _mac_run_osascript(script)
+        return True
     return bool(user32.SetWindowPos(hwnd, 0, x, y, 0, 0, SWP_NOSIZE | SWP_NOZORDER))
 
 
 def resize_window(hwnd: int, width: int, height: int) -> bool:
     """Resize a window without moving it."""
+    if _IS_MAC:
+        target = _mac_target(hwnd)
+        if not target:
+            return False
+        script = f'''
+tell application "System Events"
+  tell process "{_mac_escape_applescript_text(target.exe_name)}"
+    set size of window 1 to {{{width}, {height}}}
+  end tell
+end tell
+'''
+        _mac_run_osascript(script)
+        return True
     return bool(user32.SetWindowPos(hwnd, 0, 0, 0, width, height, SWP_NOMOVE | SWP_NOZORDER))
 
 
 def minimize_window(hwnd: int) -> bool:
     """Minimize a window."""
+    if _IS_MAC:
+        target = _mac_target(hwnd)
+        if not target:
+            return False
+        script = f'tell application "System Events" to set value of attribute "AXMinimized" of window 1 of process "{_mac_escape_applescript_text(target.exe_name)}" to true'
+        _mac_run_osascript(script)
+        return True
     return bool(user32.ShowWindow(hwnd, SW_MINIMIZE))
 
 
 def maximize_window(hwnd: int) -> bool:
     """Maximize a window."""
+    if _IS_MAC:
+        target = _mac_target(hwnd)
+        if not target:
+            return False
+        _mac_run_osascript(f'tell application "{_mac_escape_applescript_text(target.exe_name)}" to activate')
+        _mac_run_osascript('tell application "System Events" to keystroke "f" using {control down, command down}')
+        return True
     return bool(user32.ShowWindow(hwnd, SW_MAXIMIZE))
 
 
 def restore_window(hwnd: int) -> bool:
     """Restore a minimized/maximized window to normal size."""
+    if _IS_MAC:
+        target = _mac_target(hwnd)
+        if not target:
+            return False
+        script = f'''
+tell application "{_mac_escape_applescript_text(target.exe_name)}" to activate
+tell application "System Events" to set value of attribute "AXMinimized" of window 1 of process "{_mac_escape_applescript_text(target.exe_name)}" to false
+'''
+        _mac_run_osascript(script)
+        return True
     return bool(user32.ShowWindow(hwnd, SW_RESTORE))
 
 
@@ -653,6 +986,13 @@ def submit_claude_input(hwnd: int) -> bool:
     Returns True if at least the parent post succeeded.
     Does NOT guarantee the prompt was processed — poll get_text_uia() to confirm.
     """
+    if _IS_MAC:
+        target = _mac_target(hwnd)
+        if not target:
+            return False
+        focus_window(hwnd)
+        send_keys("enter")
+        return True
     WM_CHAR = 0x0102
     lParam  = 0x001C0001  # repeat=1, scan=0x1C (Enter), extended=0
 
@@ -682,6 +1022,12 @@ def scroll_window(hwnd: int, clicks: int = -3) -> None:
     Negative clicks = scroll down, positive = scroll up.
     Each click is 120 units (WHEEL_DELTA).
     """
+    if _IS_MAC:
+        target = _mac_target(hwnd)
+        if target:
+            focus_window(hwnd)
+            _mac_run_osascript(f'tell application "System Events" to scroll wheel {clicks}')
+        return
     WHEEL_DELTA = 120
     w_param = ctypes.c_int32(clicks * WHEEL_DELTA).value & 0xFFFFFFFF
     w_param = (w_param << 16)  # wParam high word = wheel delta
@@ -732,6 +1078,27 @@ def capture_window(hwnd: int):
     except ImportError:
         print("[capture] Pillow not installed: pip install Pillow")
         return None
+
+    if _IS_MAC:
+        import tempfile
+        rect = get_window_rect(hwnd)
+        fd, path = tempfile.mkstemp(suffix=".png")
+        os.close(fd)
+        try:
+            cmd = ["screencapture", "-x"]
+            x, y, w, h = rect
+            if w > 0 and h > 0:
+                cmd.extend(["-R", f"{x},{y},{w},{h}"])
+            cmd.append(path)
+            proc = _subprocess.run(cmd, check=False, capture_output=True, timeout=10)
+            if proc.returncode != 0:
+                return None
+            return Image.open(path).convert("RGB")
+        finally:
+            try:
+                os.unlink(path)
+            except OSError:
+                pass
 
     rect = wintypes.RECT()
     user32.GetWindowRect(hwnd, ctypes.byref(rect))
@@ -1321,19 +1688,23 @@ class WindowPool:
 CF_UNICODETEXT = 13
 
 # 64-bit-safe argtypes for clipboard API
-kernel32.GlobalAlloc.restype          = ctypes.c_void_p
-kernel32.GlobalAlloc.argtypes         = [ctypes.c_uint, ctypes.c_size_t]
-kernel32.GlobalFree.restype           = ctypes.c_void_p
-kernel32.GlobalFree.argtypes          = [ctypes.c_void_p]
-kernel32.GlobalUnlock.argtypes        = [ctypes.c_void_p]
-user32.SetClipboardData.restype       = ctypes.c_void_p
-user32.SetClipboardData.argtypes      = [ctypes.c_uint, ctypes.c_void_p]
-user32.GetClipboardData.restype       = ctypes.c_void_p
-user32.GetClipboardData.argtypes      = [ctypes.c_uint]
+if _IS_WINDOWS:
+    kernel32.GlobalAlloc.restype          = ctypes.c_void_p
+    kernel32.GlobalAlloc.argtypes         = [ctypes.c_uint, ctypes.c_size_t]
+    kernel32.GlobalFree.restype           = ctypes.c_void_p
+    kernel32.GlobalFree.argtypes          = [ctypes.c_void_p]
+    kernel32.GlobalUnlock.argtypes        = [ctypes.c_void_p]
+    user32.SetClipboardData.restype       = ctypes.c_void_p
+    user32.SetClipboardData.argtypes      = [ctypes.c_uint, ctypes.c_void_p]
+    user32.GetClipboardData.restype       = ctypes.c_void_p
+    user32.GetClipboardData.argtypes      = [ctypes.c_uint]
 
 
 def read_clipboard() -> str:
     """Read Unicode text from the Windows clipboard. Returns '' on failure."""
+    if _IS_MAC:
+        proc = _subprocess.run(["pbpaste"], check=False, capture_output=True, text=True)
+        return proc.stdout if proc.returncode == 0 else ""
     if not user32.OpenClipboard(0):
         return ""
     try:
@@ -1357,6 +1728,9 @@ def write_clipboard(text: str) -> bool:
     character-by-character typing, supports arbitrary string content.
     Returns True on success.
     """
+    if _IS_MAC:
+        proc = _subprocess.run(["pbcopy"], input=text, check=False, text=True)
+        return proc.returncode == 0
     if not user32.OpenClipboard(0):
         return False
     try:
@@ -1385,6 +1759,10 @@ def click_at(x: int, y: int, button: str = "left") -> None:
     Click at absolute screen coordinates using SetCursorPos + mouse_event.
     button: 'left' or 'right'
     """
+    if _IS_MAC:
+        click = "right click" if button == "right" else "click"
+        _mac_run_osascript(f'tell application "System Events" to {click} at {{{x}, {y}}}')
+        return
     user32.SetCursorPos(x, y)
     time.sleep(0.05)
     if button == "right":
@@ -1401,6 +1779,11 @@ def click_window(target: WindowTarget, client_x: int, client_y: int,
     Click at coordinates relative to a window's client area.
     Converts client coords to screen coords, focuses the window, then clicks.
     """
+    if _IS_MAC:
+        x, y, _, _ = get_window_rect(target.hwnd)
+        focus_window(target.hwnd)
+        click_at(x + client_x, y + client_y, button)
+        return
     pt = wintypes.POINT(client_x, client_y)
     user32.ClientToScreen(target.hwnd, ctypes.byref(pt))
     focus_window(target.hwnd)

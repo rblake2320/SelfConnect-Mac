@@ -3,18 +3,18 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "selfconnect"
+name = "selfconnect-mac"
 version = "0.10.0"
-description = "OS-native Win32 bridge for AI agent orchestration — PostMessage, PrintWindow, UIA, cross-machine mesh, Telegram approvals, ClaudeGo dashboard."
+description = "Mac-compatible SelfConnect bridge for AI agent orchestration, with Win32 behavior preserved on Windows and native macOS fallbacks."
 readme = "README.md"
 license = { file = "LICENSE" }
 requires-python = ">=3.10"
-keywords = ["ai", "automation", "windows", "desktop", "win32", "agent"]
+keywords = ["ai", "automation", "macos", "windows", "desktop", "agent"]
 classifiers = [
     "Development Status :: 4 - Beta",
-    "Environment :: Win32 (MS Windows)",
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
+    "Operating System :: MacOS",
     "Operating System :: Microsoft :: Windows",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",
@@ -55,8 +55,8 @@ full = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/rblake2320/selfconnect"
-Repository = "https://github.com/rblake2320/selfconnect"
+Homepage = "https://github.com/rblake2320/selfconnect-mac"
+Repository = "https://github.com/rblake2320/selfconnect-mac"
 
 [tool.hatch.build.targets.wheel]
 include = ["self_connect.py", "claudego/**"]

@@ -37,6 +37,7 @@ CLI:
 """
 
 import ctypes
+import os
 import sys
 import threading
 import time
@@ -45,9 +46,26 @@ from typing import Callable
 
 sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
-ctypes.windll.shcore.SetProcessDpiAwareness(2)
+_IS_WINDOWS = os.name == "nt"
 
-user32 = ctypes.windll.user32
+if _IS_WINDOWS:
+    ctypes.windll.shcore.SetProcessDpiAwareness(2)
+
+
+class _UnavailableWin32Function:
+    def __call__(self, *args, **kwargs):
+        return 0
+
+
+class _UnavailableWin32Library:
+    def __getattr__(self, _name: str):
+        return _UnavailableWin32Function()
+
+
+if not hasattr(ctypes, "WINFUNCTYPE"):
+    ctypes.WINFUNCTYPE = ctypes.CFUNCTYPE  # type: ignore[attr-defined]
+
+user32 = ctypes.windll.user32 if _IS_WINDOWS else _UnavailableWin32Library()
 WM_CHAR = 0x0102
 WNDENUMPROC = ctypes.WINFUNCTYPE(ctypes.c_bool, ctypes.c_int, ctypes.c_int)
 
@@ -112,6 +130,8 @@ class AntigravitySession:
 
 def _find_chrome_windows() -> list[tuple[int, str, int]]:
     """Return list of (hwnd, title, pid) for all Chrome_WidgetWin_1 windows."""
+    if not _IS_WINDOWS:
+        return []
     found = []
 
     def cb(hwnd, _):
