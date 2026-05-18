@@ -755,6 +755,12 @@ def get_child_texts(hwnd: int) -> "list[tuple[int, str, str]]":
     Useful for reading edit controls, static labels, buttons, etc.
     without taking a screenshot — zero inference cost.
     """
+    if _IS_MAC:
+        target = _mac_target(hwnd)
+        if target and target.exe_name == "Terminal":
+            return [(target.hwnd, target.class_name, get_text_uia(target.hwnd))]
+        return []
+
     results: list[tuple[int, str, str]] = []
     WNDENUMPROC = ctypes.WINFUNCTYPE(ctypes.c_bool, ctypes.c_int, ctypes.c_int)
 
@@ -1154,6 +1160,8 @@ def capture_window(hwnd: int):
 
 def crop_to_client(hwnd: int, img):
     """Crop a full-window image to just the client area (removes title bar, chrome)."""
+    if _IS_MAC:
+        return img
     try:
         cr = wintypes.RECT()
         user32.GetClientRect(hwnd, ctypes.byref(cr))
@@ -1246,6 +1254,8 @@ def is_elevated(hwnd: int) -> bool:
     PostMessage / SendMessage to elevated processes is silently dropped by UIPI
     when the caller is not elevated. Check this before using control messages.
     """
+    if not _IS_WINDOWS:
+        return False
     pid = ctypes.c_ulong(0)
     user32.GetWindowThreadProcessId(hwnd, ctypes.byref(pid))
     h_process = kernel32.OpenProcess(0x0400, False, pid.value)  # PROCESS_QUERY_INFORMATION
@@ -1311,6 +1321,10 @@ def send_keys_to(hwnd: int, *keys: str) -> None:
 
     keys: strings like 'enter', 'tab', 'escape', 'up', 'down', 'f5', etc.
     """
+    if _IS_MAC:
+        focus_window(hwnd)
+        send_keys(*keys)
+        return
     _VK_MAP = {
         "enter": VK_RETURN, "return": VK_RETURN,
         "tab": VK_TAB, "escape": VK_ESCAPE, "esc": VK_ESCAPE,
@@ -1335,6 +1349,17 @@ def close_window(hwnd: int) -> bool:
     Send WM_CLOSE to a window — graceful close, same as clicking X.
     Background-safe (PostMessage). Returns True if message was posted.
     """
+    if _IS_MAC:
+        target = _mac_target(hwnd)
+        if not target:
+            return False
+        if target.exe_name == "Terminal":
+            _mac_run_osascript(f'tell application "Terminal" to close window id {target.hwnd}')
+            return True
+        _mac_run_osascript(
+            f'tell application "System Events" to tell process "{_mac_escape_applescript_text(target.exe_name)}" to close window 1'
+        )
+        return True
     _audit("close_window", hwnd)
     return bool(user32.PostMessageW(hwnd, WM_CLOSE, 0, 0))
 
@@ -1345,6 +1370,8 @@ def get_text(hwnd: int) -> str:
     Works with: classic Edit, RichEdit, static labels, buttons.
     Does NOT work with: Chromium textareas, UWP/WinUI3 edit controls.
     """
+    if _IS_MAC:
+        return get_text_uia(hwnd)
     length = _smto(hwnd, WM_GETTEXTLENGTH, 0, 0)
     if not length:
         return ""
@@ -1364,6 +1391,12 @@ def set_text(hwnd: int, text: str) -> bool:
 
     Returns True if SendMessage succeeded (note: success ≠ text was accepted).
     """
+    if _IS_MAC:
+        target = _mac_target(hwnd)
+        if not target:
+            return False
+        send_string(target, text)
+        return True
     _audit("set_text", hwnd, repr(text[:40]))
     result = _smto(hwnd, WM_SETTEXT, 0, ctypes.cast(
         ctypes.create_unicode_buffer(text), ctypes.c_void_p
@@ -1383,6 +1416,8 @@ def click_button(parent_hwnd: int, button_text: str = "",
 
     Returns True if a matching button was found and BM_CLICK was sent.
     """
+    if _IS_MAC:
+        return False
     found = [False]
     WNDENUMPROC = ctypes.WINFUNCTYPE(ctypes.c_bool, ctypes.c_int, ctypes.c_int)
 
@@ -1411,6 +1446,8 @@ def send_command(hwnd: int, command_id: int) -> bool:
     command_id: the numeric ID of the menu item or control command.
     Use get_menu_items() to discover menu IDs.
     """
+    if _IS_MAC:
+        return False
     _audit("send_command", hwnd, f"cmd={command_id}")
     return bool(user32.PostMessageW(hwnd, WM_COMMAND, command_id, 0))
 
@@ -1420,6 +1457,8 @@ def select_combo(hwnd: int, index: int) -> bool:
     Select an item in a ComboBox by zero-based index via CB_SETCURSEL.
     Background-safe. Works with classic Win32 ComboBox controls.
     """
+    if _IS_MAC:
+        return False
     _audit("select_combo", hwnd, f"index={index}")
     result = _smto(hwnd, CB_SETCURSEL, index, 0)
     return result != 0xFFFF  # CB_ERR = 0xFFFF (as unsigned)
@@ -1430,6 +1469,8 @@ def select_listbox(hwnd: int, index: int) -> bool:
     Select an item in a ListBox by zero-based index via LB_SETCURSEL.
     Background-safe. Works with classic Win32 ListBox controls.
     """
+    if _IS_MAC:
+        return False
     _audit("select_listbox", hwnd, f"index={index}")
     result = _smto(hwnd, LB_SETCURSEL, index, 0)
     return result != 0xFFFF
@@ -1446,6 +1487,14 @@ def post_click(hwnd: int, x: int, y: int) -> None:
 
     For reliable clicking use click_at() with focus, or click_button() for buttons.
     """
+    if _IS_MAC:
+        target = _mac_target(hwnd)
+        if not target:
+            return
+        left, top, _, _ = get_window_rect(hwnd)
+        focus_window(hwnd)
+        click_at(left + x, top + y)
+        return
     _audit("post_click", hwnd, f"({x},{y})")
     lp = _makelparam(x, y)
     user32.PostMessageW(hwnd, WM_LBUTTONDOWN, MK_LBUTTON, lp)
@@ -1459,6 +1508,8 @@ def list_child_controls(hwnd: int) -> list[dict]:
     Returns list of dicts: {hwnd, class_name, text, rect: (x,y,w,h)}.
     Critical for discovering what controls exist before targeting them.
     """
+    if _IS_MAC:
+        return []
     results: list[dict] = []
     WNDENUMPROC = ctypes.WINFUNCTYPE(ctypes.c_bool, ctypes.c_int, ctypes.c_int)
 
@@ -1486,6 +1537,8 @@ def find_child_by_text(hwnd: int, text: str, partial: bool = True) -> int:
     partial=True: substring match (case-insensitive).
     partial=False: exact match (case-insensitive).
     """
+    if _IS_MAC:
+        return 0
     found = [0]
     WNDENUMPROC = ctypes.WINFUNCTYPE(ctypes.c_bool, ctypes.c_int, ctypes.c_int)
     needle = text.lower()
@@ -1511,6 +1564,8 @@ def get_menu_items(hwnd: int) -> list[dict]:
     Returns list of dicts: {index, text, id, submenu: [{index, text, id}, ...]}.
     Use the returned 'id' values with send_command() to trigger menu items.
     """
+    if _IS_MAC:
+        return []
     h_menu = user32.GetMenu(hwnd)
     if not h_menu:
         return []
@@ -1572,6 +1627,8 @@ def exclude_from_capture(hwnd: int) -> bool:
     Requires the calling process to own the window.
     Returns True on success.
     """
+    if _IS_MAC:
+        return False
     _audit("exclude_from_capture", hwnd)
     return bool(user32.SetWindowDisplayAffinity(hwnd, WDA_EXCLUDEFROMCAPTURE))
 
@@ -1581,6 +1638,8 @@ def include_in_capture(hwnd: int) -> bool:
     Re-enable PrintWindow capture for a window previously excluded.
     Reverses exclude_from_capture().
     """
+    if _IS_MAC:
+        return False
     _audit("include_in_capture", hwnd)
     return bool(user32.SetWindowDisplayAffinity(hwnd, WDA_NONE))
 
@@ -2849,6 +2908,15 @@ class MigrationCoordinator:
     def _find_new_hwnd(self, before: "set[int]",
                        timeout: float = 8.0, poll: float = 0.4) -> "int | None":
         """Poll until a new terminal HWND appears that wasn't in ``before``."""
+        if not _IS_WINDOWS:
+            deadline = time.monotonic() + timeout
+            while time.monotonic() < deadline:
+                time.sleep(poll)
+                for w in list_windows():
+                    if w.hwnd not in before and w.exe_name in {"Terminal", "iTerm2", "iTerm"}:
+                        return w.hwnd
+            return None
+
         _user32 = ctypes.windll.user32
         deadline = time.monotonic() + timeout
         while time.monotonic() < deadline:
@@ -2914,6 +2982,32 @@ class MigrationCoordinator:
             briefing += f"\n{self.continuation}\n"
 
         os.makedirs("proofs", exist_ok=True)
+
+        if not _IS_WINDOWS:
+            try:
+                before = {w.hwnd for w in list_windows()}
+                _subprocess.run(
+                    [
+                        "osascript",
+                        "-e",
+                        f'tell application "Terminal" to do script "cd {workdir}; claude"',
+                    ],
+                    check=False,
+                    capture_output=True,
+                    text=True,
+                    timeout=10,
+                )
+                new_hwnd = self._find_new_hwnd(before, timeout=12.0)
+                if not new_hwnd:
+                    return None
+                new_win = next((w for w in list_windows() if w.hwnd == new_hwnd), None)
+                if not new_win:
+                    return new_hwnd
+                time.sleep(12.0)
+                send_string(new_win, briefing + "\r")
+                return new_hwnd
+            except Exception:
+                return None
 
         # Snapshot existing windows before spawn
         before = {w.hwnd for w in list_windows()}

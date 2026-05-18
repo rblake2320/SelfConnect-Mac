@@ -19,12 +19,14 @@ Interface (do not change signatures — routers depend on these):
 import asyncio
 import io
 import logging
+import os
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
 from typing import Callable
 
 logger = logging.getLogger(__name__)
+_IS_WINDOWS = os.name == "nt"
 
 _active_hwnd: int = 0
 _running = False
@@ -85,6 +87,9 @@ def _capture_one(hwnd: int) -> bytes | None:
         logger.debug(f"[capture] PrintWindow failed: {e}")
 
     # --- Strategy 2: PIL.ImageGrab (for GPU-composited windows like Chrome) ---
+    if not _IS_WINDOWS:
+        return None
+
     try:
         import ctypes
         import ctypes.wintypes

@@ -26,8 +26,10 @@ llava structured prompt for browsers:
 """
 import asyncio
 import logging
+import os
 
 logger = logging.getLogger(__name__)
+_IS_WINDOWS = os.name == "nt"
 
 _latest: list = []
 _task: asyncio.Task | None = None
@@ -85,6 +87,9 @@ async def detect(hwnd: int, frame_jpeg: bytes | None = None) -> list:
 
 def _get_win32_controls(hwnd: int) -> list:
     """Use list_child_controls to get Win32 UI elements."""
+    if not _IS_WINDOWS:
+        return []
+
     import sys, os
     sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
