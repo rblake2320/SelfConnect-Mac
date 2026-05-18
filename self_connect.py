@@ -2475,7 +2475,7 @@ class WatchdogLoop:
 
     def _classify(self, text: str, rec: PeerRecord) -> PeerState:
         """Classify state from extracted text. Updates stall timer in-place."""
-        text_hash = _hashlib.md5(text.encode("utf-8", "replace")).hexdigest()
+        text_hash = _hashlib.sha256(text.encode("utf-8", "replace")).hexdigest()
         now = time.time()
         if text_hash != rec.last_text_hash:
             rec.last_text_hash = text_hash
@@ -2843,13 +2843,7 @@ class MigrationCoordinator:
 
         Returns True if migration was triggered this call, False otherwise.
         """
-        with self._lock:
-            if self._migrated:
-                return False
-            if current / self.capacity < self.threshold:
-                return False
-            self._migrated = True
-
+        ratio = current / self.capacity
         peers_snapshot = [
             {"hwnd": r.hwnd, "label": r.label, "state": r.state.value}
             for r in self.registry.all_peers()
@@ -2859,8 +2853,22 @@ class MigrationCoordinator:
             own_hwnd   = self.own_hwnd,
             peers      = peers_snapshot,
             pending    = pending or {},
-            meta       = meta or {},
+            meta       = {
+                **(meta or {}),
+                "context_current": current,
+                "context_capacity": self.capacity,
+                "context_ratio": ratio,
+            },
         )
+
+        with self._lock:
+            if self._migrated:
+                return False
+            if ratio < self.threshold:
+                write_checkpoint(cp, self.checkpoint_path)
+                return False
+            self._migrated = True
+
         path = write_checkpoint(cp, self.checkpoint_path)
 
         # Step 1: Spawn successor first — so we have the hwnd before broadcasting

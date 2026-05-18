@@ -173,6 +173,7 @@ def _clamp01(value: float) -> float:
 async def _detect_via_llava(frame_jpeg: bytes) -> list:
     """Use Ollama llava to detect UI elements in a browser screenshot."""
     import base64, json, httpx
+    from vision_server import config
     from vision_server.config import OLLAMA_URL, OLLAMA_VL_MODEL, OLLAMA_VL_TIMEOUT
     from vision_server.models.schemas import Detection
 

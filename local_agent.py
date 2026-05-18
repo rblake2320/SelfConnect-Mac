@@ -16,7 +16,7 @@ MAX_OUTPUT = 8000
 # --- Bash denylist (destructive commands) ---
 DENY_PATTERNS = [
     r'\brm\s+-rf\s+/', r'\bformat\b', r'\bmkfs\b', r'\bdd\s+if=',
-    r'\b:>\s*/', r'\bdel\s+/[sq]', r'\brmdir\s+/s',
+    r':>\s*/', r'\bdel\s+/[sq]', r'\brmdir\s+/s',
 ]
 
 # === TOOL IMPLEMENTATIONS ===
