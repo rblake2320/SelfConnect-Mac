@@ -399,6 +399,7 @@ The following `Team Inbox/` records contain the v2 live-fire evidence:
 - `Team Inbox/tmux_backend_verification.md`
 - `Team Inbox/tcc_live_fire_evidence.md`
 - `Team Inbox/codex1_test_report.md`
+- `Team Inbox/codex1_package_verification.md`
 - `Team Inbox/codex1_prior_art_update.md`
 - `Team Inbox/msg_from_claude1_to_codex1_symswift_followup.md`
 - `Team Inbox/msg_from_claude1_to_codex1_9916ebd_ack.md`
