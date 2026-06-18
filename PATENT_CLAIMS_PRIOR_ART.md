@@ -40,7 +40,7 @@ All cited prior-art systems use **application-layer RPC** (MCP server, HTTP supe
 - "Bonjour AI mesh"
 - "peer-to-peer LLM coordination"
 
-### Findings — negative search
+### Findings — updated search
 
 | Source | URL | Why it does not anticipate |
 |---|---|---|
@@ -48,8 +48,9 @@ All cited prior-art systems use **application-layer RPC** (MCP server, HTTP supe
 | PAISHackathon/team4 | https://github.com/PAISHackathon/team4 | Hackathon MPC project for a different domain (not LLM mesh). |
 | Apple MultipeerConnectivity docs | https://developer.apple.com/documentation/multipeerconnectivity | Reference doc, not an LLM mesh application. |
 | Yggdrasil — On AWDL | https://yggdrasil-network.github.io/2019/08/19/awdl.html | Yggdrasil over AWDL; not LLM-specific. |
+| sym-bot/sym-swift | https://github.com/sym-bot/sym-swift | Material 2026 prior art for Bonjour/native Swift agent mesh. It narrows generic Bonjour/agent-mesh claims; surviving SelfConnect distinction is the combination with terminal-control agents, unified-log bus, FSEvents inbox, pasteboard, APFS checkpointing, and local approval gates. |
 
-**No surveyed LLM-mesh project uses MultipeerConnectivity or AWDL.** Claim 3 is supported.
+**Updated conclusion:** generic Bonjour/native Swift agent mesh is no longer a clean standalone novelty lane. Claim 3 should be narrowed to the SelfConnect combination: OS-substrate terminal/agent control plus Bonjour discovery and optional Multipeer/AWDL transport, tied to the `os_log`, FSEvents, pasteboard, APFS, and approval-gate layers.
 
 ---
 
@@ -185,7 +186,7 @@ Use of `CGEventPostToPid` as the **primary** terminal-agnostic agent-mesh inject
 |---|---|---|
 | 1 — Pure-OS-substrate inter-agent transport | Primary | Standalone (umbrella) |
 | 5 — os_log unified-logging mesh bus | Primary | Standalone |
-| 2 — MultipeerConnectivity / AWDL mesh | Primary | Standalone |
+| 2 — Bonjour / MultipeerConnectivity discovery for terminal-resident OS-substrate mesh | Secondary, narrow | Dependent under Claim 1 |
 | 3 — Inline Secure-Enclave per-action gate | Primary, narrow | Standalone |
 | 4 — APFS clonefile per-tool-call snapshot | Secondary | Dependent under Claim 1 |
 | 6 — CGEventPostToPid as primary mesh inject | Secondary | Dependent under Claim 1 |

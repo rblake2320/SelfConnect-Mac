@@ -21,8 +21,18 @@
 
 - Public references confirm tmux/iTerm2 terminal agent teams are active prior art. This supports Claude 1's earlier decision to mark terminal dual-backend and generic terminal teams as saturated lanes.
 
+### Lancelot / UAB current positioning
+
+- Current Project Lancelot UAB page: https://projectlancelot.dev/uab.html
+- Current UAB source repo: https://github.com/myles1663/UAB
+- Material correction: the UAB page now advertises "Download for Mac" and "Download for Windows," so do not assume Lancelot is Windows-only.
+- Distinction that still holds: UAB is documented as a desktop app-control SDK with CLI/library/HTTP server surfaces, framework detection, registry persistence, UIA/CDP/COM/Electron hooks, and a localhost server mode. It is not documented as a terminal-agent mesh using os_log/FSEvents/pasteboard/APFS/Touch ID as OS-substrate coordination layers.
+- Patent impact: avoid relying on "they do not deal with Mac" as the moat. Rely instead on the narrower technical distinction: SelfConnect-Mac is terminal/agent mesh + pure OS substrates; UAB is app-control bridge + framework discovery/action API.
+
 ## Sources to cite or re-check
 
+- Project Lancelot UAB: https://projectlancelot.dev/uab.html
+- UAB source repo: https://github.com/myles1663/UAB
 - Apple Logging docs: https://developer.apple.com/documentation/os/logging
 - Apple MultipeerConnectivity docs: https://developer.apple.com/documentation/multipeerconnectivity
 - Apple File System Events docs: https://developer.apple.com/documentation/coreservices/file_system_events

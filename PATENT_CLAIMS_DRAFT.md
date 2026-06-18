@@ -14,8 +14,8 @@ Following a structured prior-art search (2026-06-17) the candidate lanes group a
 |---|---|---|
 | 1. Pure-OS-substrate AI agent mesh (no MCP/HTTP) | **Primary** | All known prior art (Claude Code Agent Teams, awslabs/cli-agent-orchestrator, Martian-Engineering/claude-team) uses MCP, HTTP, or other application-layer RPC. SelfConnect's exclusive use of OS-native I/O is the differentiating limitation. |
 | 2. `os_log` unified-logging system as inter-agent bus | **Primary** | Unified logging is universally documented as observability. No published project uses it as the *primary* inter-process bus for an agent mesh. |
-| 3. MultipeerConnectivity / AWDL for LLM agent mesh | **Primary** | P2P-LLM prior art uses gossip/DHT/WebSocket. No published project uses AWDL/MPC. |
-| 4. LocalAuthentication inline Secure-Enclave gate | **Secondary** | Cloud out-of-band biometric agent approval is documented (Auth0, YubiKey, Nametag, VeryAI). The *inline, same-device, command-bound* variant is unattested in published agent systems. |
+| 3. Bonjour / MultipeerConnectivity discovery for terminal-resident OS-substrate mesh | **Secondary / Dependent** | `sym-bot/sym-swift` is material prior art for generic Bonjour/native Swift agent mesh. The surviving SelfConnect distinction is the combination with terminal-resident agent processes and the OS-substrate control channels of Claim 1. |
+| 4. LocalAuthentication inline Secure-Enclave gate | **Primary, narrow** | Cloud out-of-band biometric agent approval is documented (Auth0, YubiKey, Nametag, VeryAI). The *inline, same-device, command-bound* variant is unattested in published agent systems. |
 | 5. APFS `clonefile(2)` per-step rollback | **Dependent** | `joeinnes/cow` uses APFS clonefile for parallel worktrees; arXiv 2511.18323 uses it for training checkpoints. SelfConnect's per-tool-call automatic clone-and-discard is narrower but defensible only as a dependent claim. |
 | 6. CGEventPostToPid as primary inject for terminal mesh | **Dependent** | The API itself is documented (`axcli`, `pyatom`). Use as the primary inject channel for an inter-agent mesh is unattested but the available scope is narrow. |
 | 7. Targeted Vision-OCR readback fallback | **Dependent** | OCR over screenshots is well known. Specific use as a typed fallback in a mesh readback cascade is bundleable. |
@@ -68,20 +68,21 @@ Each claim below identifies its implementing source file in this repository so t
 
 ---
 
-## Claim 3 — MultipeerConnectivity / AWDL for LLM agent mesh (Primary)
+## Claim 3 — Bonjour / MultipeerConnectivity mesh combined with OS-substrate agent control (Secondary, narrow under Claim 1)
 
-**Independent claim 3.** A method for coordinating two or more autonomous LLM-driven agent processes residing on distinct physical macOS hosts on a local area network or local radio range, comprising:
+**Dependent claim 3.** The method of claim 1, extended across two or more physical macOS hosts on a local area network or local radio range, comprising:
 
 1. each host advertising a service of type `_selfconnect._tcp.` via Bonjour / mDNS carrying TXT-record metadata describing agent identifiers, capabilities, and supported message formats;
 2. remote hosts browsing for services of said type and discovering peer agents without requiring DNS, static configuration, or shared pre-pairing;
 3. on hosts pairwise possessing Apple Wireless Direct Link (AWDL)-capable radios, optionally upgrading the inter-host transport to Apple's `MultipeerConnectivity` framework with `MCNearbyServiceAdvertiser` and `MCNearbyServiceBrowser`, providing direct peer-to-peer Wi-Fi, Bluetooth, or AWDL transport without router intermediation;
-4. exchanging agent task descriptions, results, and coordination signals via the `MCSession` send-data primitive.
+4. binding each discovered peer to a terminal-resident agent process controlled on its own host through the operating-system-provided substrates of claim 1 rather than through an in-process agent SDK;
+5. exchanging inter-host task envelopes, results, and coordination signals through Bonjour metadata and/or the `MCSession` send-data primitive, wherein execution against the local agent process remains mediated by the host-local OS-substrate delivery and readback channels of claim 1.
 
 **Dependent claim 3.1.** The method of claim 3, wherein the `discoveryInfo` dictionary supplied to the `MCNearbyServiceAdvertiser` carries an agent capability vocabulary that the browsing peer evaluates against task requirements before initiating an `MCSession` invitation.
 
 **Dependent claim 3.2.** The method of claim 3, wherein non-macOS peers participate in the mesh through the Bonjour discovery layer of step (1) but do not upgrade to the MultipeerConnectivity transport of step (3).
 
-**Differentiation note:** Surveyed peer-to-peer LLM systems use WebSocket overlays (Olib-AI/ConnectionPool), DHT/gossip protocols, or cloud relays. No surveyed LLM-mesh project employs Apple's `MultipeerConnectivity` framework or AWDL transport.
+**Differentiation note:** Public 2026 prior art includes Bonjour/native Swift agent-mesh work (`sym-bot/sym-swift`), so this claim should not be filed as a broad generic Bonjour or Multipeer agent-mesh claim. The defensible distinction is the combination with SelfConnect's OS-substrate terminal/agent-control stack, including unified-log bus, FSEvents inbox, pasteboard channels, APFS checkpoints, and same-device approval gates.
 
 **Implementing files:** `selfconnect_mac/mesh/multipeer.py`.
 
@@ -174,7 +175,7 @@ Each claim below identifies its implementing source file in this repository so t
 
 ## Note to counsel
 
-The two strongest standalone candidates are Claim 2 (`os_log` mesh bus) and Claim 3 (MultipeerConnectivity for LLM mesh). Both have negative prior-art search results on the specific application. Claim 1 (pure-OS-substrate, no-RPC) is the umbrella claim that distinguishes SelfConnect from documented multi-agent systems and is the recommended primary independent claim of any filing. Claim 4 (inline Secure-Enclave gate) is a defensible third primary candidate.
+The strongest standalone candidates are Claim 1 (pure-OS-substrate, no-RPC), Claim 2 (`os_log` mesh bus), and Claim 4 (inline Secure-Enclave gate). Claim 3 should not be filed as a broad standalone Bonjour or Multipeer agent-mesh claim after the `sym-bot/sym-swift` finding; it is best filed as a dependent or narrow combination claim under Claim 1.
 
 Claims 5–8 are appropriate dependent claims to bundle under Claim 1 and/or Claim 2.
 

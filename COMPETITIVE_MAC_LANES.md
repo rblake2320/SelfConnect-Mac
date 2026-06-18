@@ -22,7 +22,7 @@ Source: https://projectlancelot.dev/uab.html, https://projectlancelot.dev/compet
 
 - **Architecture:** localhost HTTP server on port 3100, TypeScript SDK + CLI.
 - **Substrate:** desktop application control via framework-specific hooks (Excel COM automation, VS Code Electron CDP, Chrome DevTools Protocol, Qt for FreeCAD, Win32 UI Automation fallback).
-- **Platforms named:** Windows and macOS installers; specific framework hooks named are Windows-centric (COM, Win32 UIA).
+- **Platforms named:** Windows and macOS installers; public technical examples emphasize app-control hooks such as COM/UIA/CDP/Electron/Qt rather than terminal-resident OS-substrate mesh coordination.
 - **Claims:** "62 action types across 9+ frameworks", "50-100× faster than screenshots", "6-tier cascade control", "17 native MCP tools".
 - **Not in scope per their documentation:** terminal-as-substrate, multi-agent mesh, peer-to-peer / multi-machine, AXUIElement for terminal text extraction, CGEvent, MultipeerConnectivity, biometric per-action approval, audio inter-agent signaling, APFS-snapshot checkpointing, unified-logging mesh bus, FSEvents-driven inbox, tmux-based headless mesh.
 - **HIVE governance layer** (referenced in their competitive matrix): "soul-inheriting sub-agent spawning with monotonic narrowing", "Receipt/Audit DAG", "Pause-inspect-modify-resume at any receipt in the execution DAG". Operates at the orchestration level above app control. Different problem from terminal mesh.
@@ -74,10 +74,10 @@ Each row identifies a macOS primitive employed by SelfConnect on the date noted,
 > **Note (2026-06-17 reconciliation):** an automated prior-art search (recorded in `PATENT_CLAIMS_PRIOR_ART.md`) found that several lanes initially listed here as "Mac-only territory" or "unoccupied by competing SDKs" are in fact documented in the broader AI-agent-tooling ecosystem (e.g., Anthropic Claude Code Agent Teams ships a pluggable tmux/iTerm2 backend; multiple Claude Code hook projects use `say`/`afplay` for status; `joeinnes/cow` uses APFS clonefile for agent worktrees). The categorization below is restated to reflect those findings. The implementation file pointers above (rows #1–#21) remain factually correct.
 
 ### Lanes documented as fully novel by the prior-art search
-- **MultipeerConnectivity / AWDL transport for LLM agent mesh** (#16) — no surveyed LLM-mesh project employs Apple's MPC framework.
 - **`os_log` unified-logging as primary inter-agent bus** (#12) — unified logging is universally documented as observability; no surveyed project uses it as the IPC bus.
 
 ### Lanes with partial prior-art overlap; novelty depends on narrowing
+- **MultipeerConnectivity / AWDL / Bonjour transport for LLM agent mesh** (#15/#16) — `sym-bot/sym-swift` is material 2026 prior art for Bonjour/native Swift agent mesh. SelfConnect's defensible angle is the narrower combination with terminal-control agents and OS-substrate buses/checkpoints/approval gates.
 - **LocalAuthentication per-action approval** (#17) — same-device inline Secure-Enclave gate is unattested; existing biometric agent approval systems are cloud out-of-band (Auth0, Nametag, VeryAI).
 - **APFS clone per-step rollback** (#20) — `joeinnes/cow` uses `clonefile` for parallel worktrees; SelfConnect's per-tool-call snapshot-and-discard cadence is narrower but not orthogonal.
 - **`CGEventPostToPid` as primary mesh inject** (#8) — the API is documented; use as the primary mesh transport (vs `tmux send-keys` / iTerm2 API) is unattested.
@@ -102,7 +102,7 @@ None of the surveyed app-control or orchestration SDKs occupy any of the above l
 
 ## Conclusion
 
-The Mac v2 implementation contains two lanes documented as fully novel against the public prior art (MultipeerConnectivity transport for LLM mesh, `os_log` as inter-agent bus), several lanes with narrowing-defensible partial-overlap (Secure-Enclave inline gate, per-tool-call APFS snapshot, `CGEventPostToPid` as primary mesh transport), four lanes that reach Win32 parity via different macOS primitives, and several lanes that are saturated prior art (generic terminal mesh, dual-backend abstraction, audio signaling) where the surviving SelfConnect contribution is the *combination* with the pure-OS-substrate, no-RPC limitation (Claim 1 in `PATENT_CLAIMS_DRAFT.md`).
+The Mac v2 implementation contains one lane documented as fully novel against the public prior art (`os_log` as inter-agent bus), several lanes with narrowing-defensible partial-overlap (Bonjour/Multipeer agent mesh combined with OS-substrate terminal control, Secure-Enclave inline gate, per-tool-call APFS snapshot, `CGEventPostToPid` as primary mesh transport), four lanes that reach Win32 parity via different macOS primitives, and several lanes that are saturated prior art (generic terminal mesh, dual-backend abstraction, audio signaling) where the surviving SelfConnect contribution is the *combination* with the pure-OS-substrate, no-RPC limitation (Claim 1 in `PATENT_CLAIMS_DRAFT.md`).
 
 The factual implementation record (rows #1–#21 above, with file paths) is unchanged by this reconciliation; only the patent-novelty categorization has been adjusted to match the prior-art evidence in `PATENT_CLAIMS_PRIOR_ART.md`.
 

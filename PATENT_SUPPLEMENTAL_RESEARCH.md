@@ -66,7 +66,7 @@ No new findings. The closest prior art remains `joeinnes/cow` and arXiv 2511.183
 
 Multiple results in this round confirm that the AI-agent patent space is **active but oriented toward orchestration, governance, and DAG semantics** (Lancelot HIVE receipts, LangGraph time-travel, AgentMesh framework, Mesh Memory Protocol). **The OS-substrate-transport lane SelfConnect occupies is not contested** — even Anthropic's own Claude Code agent-teams ships at the orchestration layer, using MCP for transport.
 
-This reinforces the recommendation in `PATENT_CLAIMS_DRAFT.md`: Claim 1 (umbrella, pure-OS-substrate, no-RPC) is the strongest filing position; Claims 2 and 3 are the strongest narrow standalone candidates.
+This reinforces the recommendation in `PATENT_CLAIMS_DRAFT.md`: Claim 1 (umbrella, pure-OS-substrate, no-RPC) is the strongest filing position; Claim 2 is the strongest narrow standalone candidate; Claim 4 is the next defensible standalone narrow. Claim 3 should be narrowed or made dependent under Claim 1 after the `sym-bot/sym-swift` finding.
 
 ## Recommendation for the attorney (updated post-sym-swift)
 
