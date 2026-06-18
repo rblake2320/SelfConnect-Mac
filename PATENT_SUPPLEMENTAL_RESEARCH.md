@@ -38,8 +38,13 @@ This second round of public-source research was triggered by user direction to "
 | US 9774563 — Packet transmission in mDNS | https://image-ppubs.uspto.gov/dirsearch-public/print/downloadPdf/9774563 | General mDNS-transport patent; does not bind to LLM agents. |
 | US 10680885 — mDNS support in unified access networks | https://image-ppubs.uspto.gov/dirsearch-public/print/downloadPdf/10680885 | General networking patent. |
 | Apple smartphone Bonjour patents (US 8831279 / 8762852 / 9218530 / 9547873) | (various) | Smartphone-app service-discovery patents; not LLM agents. |
+| **sym-bot/sym-swift** (surfaced by Codex 1 round 2; verified via WebFetch) | https://github.com/sym-bot/sym-swift | **MATERIAL prior art** for the broad "Bonjour AI agent mesh on macOS" angle. Ships an iOS/macOS Swift SDK that joins a decentralized mesh via Bonjour (`_sym._tcp.`), integrates LLM-based decision-making (CAT7 fields + SVAF attention fusion), and claims production deployment (MeloTune, App Store since Nov 2025) and verified macOS↔macOS↔Windows↔Node.js interop (April 2026). |
 
-**Conclusion:** No anticipating art. Claim 3 retains primary-novel status.
+**Updated conclusion:** Claim 3 as originally drafted (broad MultipeerConnectivity/Bonjour for LLM agent mesh) is **anticipated** by sym-swift for the discovery layer. The surviving narrow distinction is sym-swift's **in-app SDK integration model** vs SelfConnect's **terminal-resident agent processes coordinated via pure-OS-substrate transport** (Claim 1's limitation). Recommended:
+
+1. Demote the standalone Claim 3 tier from Primary to Secondary in the triage table.
+2. Rewrite Claim 3 to explicitly include the terminal-resident + Claim 1 limitation: each peer being a terminal-resident agent process coordinated by Bonjour-discovered peers AND by the pure-OS-substrate transports of Claim 1.
+3. Note for counsel: the sym-swift finding is from 2025/2026 — predates SelfConnect-Mac v2 (this commit) but **postdates** the v1 verified record (`PATENT_PROCESS_RECORD.md`, 2026-05-13).
 
 ### Claim 4 — LocalAuthentication inline Secure-Enclave gate
 
@@ -63,12 +68,15 @@ Multiple results in this round confirm that the AI-agent patent space is **activ
 
 This reinforces the recommendation in `PATENT_CLAIMS_DRAFT.md`: Claim 1 (umbrella, pure-OS-substrate, no-RPC) is the strongest filing position; Claims 2 and 3 are the strongest narrow standalone candidates.
 
-## Recommendation for the attorney
+## Recommendation for the attorney (updated post-sym-swift)
 
-1. File Claim 1 as the umbrella.
-2. File Claim 2 (`os_log` bus) and Claim 3 (MultipeerConnectivity LLM mesh) as standalone narrows under Claim 1.
-3. File Claim 4 (inline Secure-Enclave gate) as a narrow standalone.
-4. Bundle Claims 5–8 (APFS clones, CGEventPostToPid, Vision-OCR cascade, NSPasteboard channels) as dependent claims under Claim 1.
-5. Do not file on Lanes 7 (audio) or 8 (dual-backend) — saturated prior art.
+1. File **Claim 1** as the umbrella (pure-OS-substrate, terminal-resident, no-RPC).
+2. File **Claim 2** (`os_log` bus) as the strongest standalone narrow — still negative prior art.
+3. File **Claim 4** (inline Secure-Enclave gate) as a second standalone narrow.
+4. **Claim 3** as drafted is anticipated by sym-swift. Either:
+   - Withdraw as standalone and re-cast as a dependent under Claim 1 ("the method of Claim 1 wherein peer discovery uses Bonjour …"), **or**
+   - Re-narrow to the combination: terminal-resident agents discovered via Bonjour AND transported via the pure-OS-substrate channels of Claim 1, distinguishing from sym-swift's in-app SDK model.
+5. Bundle Claims 5–8 (APFS clones, CGEventPostToPid, Vision-OCR cascade, NSPasteboard channels) as dependent claims under Claim 1.
+6. Do not file on Lanes 7 (audio) or 8 (dual-backend) — saturated prior art.
 
 — Claude 1
