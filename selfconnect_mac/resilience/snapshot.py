@@ -31,13 +31,30 @@ SNAPSHOT_DIR_NAME = ".selfconnect_snapshots"
 
 def is_apfs(path: str | os.PathLike) -> bool:
     """True if `path` is on an APFS volume."""
+    target = Path(path).resolve()
+    while not target.exists() and target != target.parent:
+        target = target.parent
     try:
-        out = subprocess.check_output(
-            ["/usr/sbin/diskutil", "info", str(path)], text=True, timeout=5
-        )
+        out = subprocess.check_output(["/sbin/mount"], text=True, timeout=5)
     except subprocess.SubprocessError:
         return False
-    return "Apple_APFS" in out or "APFS" in out
+
+    best_mount = ""
+    best_type = ""
+    for line in out.splitlines():
+        if " on " not in line or " (" not in line:
+            continue
+        _, rest = line.split(" on ", 1)
+        mount_point, options = rest.split(" (", 1)
+        try:
+            mount_path = Path(mount_point).resolve()
+            target.relative_to(mount_path)
+        except (OSError, ValueError):
+            continue
+        if len(str(mount_path)) > len(best_mount):
+            best_mount = str(mount_path)
+            best_type = options.split(",", 1)[0].strip().lower()
+    return best_type == "apfs"
 
 
 def checkpoint(workspace: str | os.PathLike, label: str) -> Path:

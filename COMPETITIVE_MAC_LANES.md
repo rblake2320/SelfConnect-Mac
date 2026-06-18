@@ -71,34 +71,39 @@ Each row identifies a macOS primitive employed by SelfConnect on the date noted,
 
 ## Differentiation by category
 
-### Lanes that have no Win32 parity (claimable Mac-only territory)
-- MultipeerConnectivity peer-to-peer mesh (#16)
-- LocalAuthentication biometric per-action approval (#17)
-- APFS clone-based O(1) checkpointing (#20)
-- `os_log` queryable mesh bus (#12)
-- Bonjour-based zero-config LAN discovery (#15)
-- Vision-OCR fallback as a primary read path (#21)
+> **Note (2026-06-17 reconciliation):** an automated prior-art search (recorded in `PATENT_CLAIMS_PRIOR_ART.md`) found that several lanes initially listed here as "Mac-only territory" or "unoccupied by competing SDKs" are in fact documented in the broader AI-agent-tooling ecosystem (e.g., Anthropic Claude Code Agent Teams ships a pluggable tmux/iTerm2 backend; multiple Claude Code hook projects use `say`/`afplay` for status; `joeinnes/cow` uses APFS clonefile for agent worktrees). The categorization below is restated to reflect those findings. The implementation file pointers above (rows #1–#21) remain factually correct.
 
-### Lanes that have Win32 parity but operate via fundamentally different primitives
-- Window enumeration: CGWindowListCopyWindowInfo (#5) vs EnumWindows
-- Per-window capture: CGWindowListCreateImage (#6) vs PrintWindow
-- Keystroke injection: CGEventPostToPid (#8) vs PostMessage(WM_CHAR)
-- Text extraction: AXUIElement (#7) vs UI Automation
+### Lanes documented as fully novel by the prior-art search
+- **MultipeerConnectivity / AWDL transport for LLM agent mesh** (#16) — no surveyed LLM-mesh project employs Apple's MPC framework.
+- **`os_log` unified-logging as primary inter-agent bus** (#12) — unified logging is universally documented as observability; no surveyed project uses it as the IPC bus.
 
-### Lanes that the surveyed competing SDKs (Lancelot/UAB, LangGraph, CrewAI, OpenAI SDK, NemoClaw, MS Agents) do not occupy as of 2026-06-17
-- Terminal-as-substrate AI agent mesh (entire problem space)
-- tmux-driven headless multi-agent mesh
-- iTerm2 Python API as agent transport
-- Audio channel for inter-agent / inter-room status
-- Biometric per-action approval
-- Multi-machine LAN peer mesh via Bonjour/MultipeerConnectivity
-- APFS clone-based mesh checkpointing
-- `os_log` unified-logging mesh bus
+### Lanes with partial prior-art overlap; novelty depends on narrowing
+- **LocalAuthentication per-action approval** (#17) — same-device inline Secure-Enclave gate is unattested; existing biometric agent approval systems are cloud out-of-band (Auth0, Nametag, VeryAI).
+- **APFS clone per-step rollback** (#20) — `joeinnes/cow` uses `clonefile` for parallel worktrees; SelfConnect's per-tool-call snapshot-and-discard cadence is narrower but not orthogonal.
+- **`CGEventPostToPid` as primary mesh inject** (#8) — the API is documented; use as the primary mesh transport (vs `tmux send-keys` / iTerm2 API) is unattested.
+
+### Lanes with Win32 functional parity, implemented via different primitives
+- Window enumeration: `CGWindowListCopyWindowInfo` (#5) vs EnumWindows.
+- Per-window capture: `CGWindowListCreateImage` (#6) vs PrintWindow.
+- Text extraction: `AXUIElement` (#7) vs UI Automation.
+- Per-process input: `CGEventPostToPid` (#8) vs PostMessage(WM_CHAR).
+
+These reach functional parity with the Win32 surface; they are not standalone claim candidates.
+
+### Lanes with saturated prior art (documented in the broader agent ecosystem; not pursued as claims)
+- **Terminal-as-substrate AI agent mesh (generic concept)** — Anthropic Claude Code Agent Teams, awslabs/cli-agent-orchestrator, Martian-Engineering/claude-team, smtg-ai/claude-squad, mixpeek/amux. SelfConnect's differentiator is the *exclusive use of OS-native substrates with no application-layer RPC* — see Claim 1 in `PATENT_CLAIMS_DRAFT.md`.
+- **Pluggable tmux + iTerm2 dual-backend** — `anthropics/claude-code` issue #26572 names and ships exactly this abstraction; Martian-Engineering/claude-team and mixpeek/amux implement it.
+- **Audio mesh signaling** (`say`/`afplay`) — Kitty Giraudel (2026-04), cfngc4594/agent-notify, ybouhjira/claude-code-tts, Benny Cheung "Hear Your AI Agents Work" all ship this for Claude Code today, with per-agent voice differentiation included.
+
+### Lanes vs surveyed app-control SDKs (Lancelot/UAB, LangGraph, CrewAI, OpenAI SDK, NemoClaw, MS Agents)
+None of the surveyed app-control or orchestration SDKs occupy any of the above lanes, because their problem space is different (DAG orchestration, app-action APIs, governance receipts) rather than OS-substrate terminal mesh. The lane distinction is between SelfConnect and other terminal-mesh systems, not between SelfConnect and these SDKs.
 
 ---
 
 ## Conclusion
 
-The Mac v2 implementation occupies six lanes the surveyed competing systems do not touch at all (terminal mesh substrate, tmux/iTerm2 backends, audio mesh signaling, biometric approval, multi-machine peer mesh, APFS checkpointing). The remaining lanes (window enumeration, capture, keystroke injection, text extraction) employ macOS-native primitives that differ in implementation from Win32 even where they reach functional parity.
+The Mac v2 implementation contains two lanes documented as fully novel against the public prior art (MultipeerConnectivity transport for LLM mesh, `os_log` as inter-agent bus), several lanes with narrowing-defensible partial-overlap (Secure-Enclave inline gate, per-tool-call APFS snapshot, `CGEventPostToPid` as primary mesh transport), four lanes that reach Win32 parity via different macOS primitives, and several lanes that are saturated prior art (generic terminal mesh, dual-backend abstraction, audio signaling) where the surviving SelfConnect contribution is the *combination* with the pure-OS-substrate, no-RPC limitation (Claim 1 in `PATENT_CLAIMS_DRAFT.md`).
+
+The factual implementation record (rows #1–#21 above, with file paths) is unchanged by this reconciliation; only the patent-novelty categorization has been adjusted to match the prior-art evidence in `PATENT_CLAIMS_PRIOR_ART.md`.
 
 This document, together with the verifiable git history at https://github.com/rblake2320/SelfConnect-Mac, establishes the date, author, file, and mechanism for each lane as of the commit containing this file.

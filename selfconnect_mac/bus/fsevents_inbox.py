@@ -35,6 +35,7 @@ try:
     from CoreFoundation import (  # type: ignore
         CFRunLoopGetCurrent,
         CFRunLoopRun,
+        CFRunLoopRunInMode,
         CFRunLoopStop,
         kCFRunLoopDefaultMode,
     )
@@ -74,9 +75,14 @@ def watch_inbox(
             time.sleep(poll_interval)
         return
 
+    def _event_path(raw_path) -> Path:
+        if isinstance(raw_path, bytes):
+            raw_path = os.fsdecode(raw_path)
+        return Path(raw_path)
+
     def _callback(_stream, _client_info, num_events, paths, _flags, _ids):
         for i in range(num_events):
-            d = Path(paths[i])
+            d = _event_path(paths[i])
             if d == inbox or d.parent == inbox:
                 for p in inbox.glob(file_glob):
                     if p.name not in seen:
@@ -99,7 +105,11 @@ def watch_inbox(
     FSEventStreamScheduleWithRunLoop(stream, runloop, kCFRunLoopDefaultMode)
     FSEventStreamStart(stream)
     try:
-        CFRunLoopRun()
+        if stop_event is None:
+            CFRunLoopRun()
+        else:
+            while not stop_event.is_set():
+                CFRunLoopRunInMode(kCFRunLoopDefaultMode, poll_interval, True)
     finally:
         FSEventStreamStop(stream)
         FSEventStreamInvalidate(stream)

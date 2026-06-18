@@ -33,14 +33,18 @@ gets best-effort foreground automation through System Events.
 > layer (iTerm2, tmux, CGEvent, AppleScript) plus Mac-native moat features that
 > Win32 has no analog for: `os_log` mesh bus, FSEvents push inbox, MultipeerConnectivity /
 > Bonjour peer discovery, Touch ID per-action approval, `say`-based audio mesh signaling,
-> APFS clone checkpoints, Vision OCR fallback. See `MAC_V2_ARCHITECTURE.md` and
-> `COMPETITIVE_MAC_LANES.md`. The v1 `self_connect.py` API is unchanged for
-> backward compatibility and prior-art continuity.
+> APFS clone checkpoints, Vision OCR fallback. See `MAC_V2_ARCHITECTURE.md`,
+> `COMPETITIVE_MAC_LANES.md`, `MAC_PERMISSIONS_GUIDE.md` (TCC failure modes), and
+> `PATENT_CLAIMS_DRAFT.md` + `PATENT_CLAIMS_PRIOR_ART.md` for the claim record.
+> The v1 `self_connect.py` API is unchanged for backward compatibility and
+> prior-art continuity.
 >
 > ```bash
-> python3 -m selfconnect_mac.cli backends   # which backends are available
-> python3 -m selfconnect_mac.cli list       # list addressable terminal targets
-> python3 -m selfconnect_mac.cli --help     # all commands
+> pip install -e '.[mac]'                   # pyobjc + iterm2 + atomacos
+> sc-mac backends                           # which backends are available (console script)
+> sc-mac list                               # list addressable terminal targets
+> sc-mac --help                             # all commands
+> # equivalent: python3 -m selfconnect_mac.cli ...
 > ```
 
 macOS requirements:
