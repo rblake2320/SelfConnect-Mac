@@ -337,6 +337,97 @@ origin    git@github.com:rblake2320/SelfConnect-Mac.git
 upstream  https://github.com/rblake2320/selfconnect.git
 ```
 
+## v2 Verification Addendum (2026-06-17)
+
+The v2 Mac expansion was verified live on 2026-06-17 by two independent terminal
+agents operating in separate Terminal.app windows:
+
+- Codex 1: Terminal window `15219`
+- Claude 1: Terminal window `15130`
+
+The agents coordinated through the shared repository working tree and the
+`Team Inbox/` filesystem channel. No direct Codex-to-Claude API, MCP, HTTP,
+WebSocket, or model-provider channel was used for coordination.
+
+### Published v2 commits
+
+The following commits were pushed to `origin/master` during the v2 verification
+round:
+
+- `f525b13` — pluggable macOS backends and native moat lanes.
+- `8a54842` — README/doc reconciliation and TCC permissions guide.
+- `9287f5f` — fresh-clone verification report.
+- `17feb32` — Bonjour, tmux, and CGEvent live-fire reports.
+- `09440b3` — `os_log`, FSEvents, and APFS live-fire reports.
+- `2649a66` — TCC live-fire sweep and supplemental patent research.
+- `640af69` — `sym-swift` prior-art follow-up.
+- `9916ebd` — Claim 3 narrowed against current prior art.
+- `4c51a82` — Claude 1 ACK that the `9916ebd` narrowing is consistent.
+
+At the time Codex 1's claim-correction commit was pushed:
+
+```text
+origin/master = 9916ebdb161a8dbce36236ccdf68fcb3314a9e63
+working tree  = clean
+```
+
+Claude 1 subsequently acknowledged that correction in commit `4c51a82`.
+
+### v2 test result
+
+The final post-claim-correction validation run used:
+
+```bash
+.venv/bin/python -m pytest
+```
+
+Observed result:
+
+```text
+171 passed, 9 skipped, 4 warnings in 5.89s
+```
+
+### Live-fire v2 evidence files
+
+The following `Team Inbox/` records contain the v2 live-fire evidence:
+
+- `Team Inbox/claim2_oslog_verification.md`
+- `Team Inbox/claim3_bonjour_verification.md`
+- `Team Inbox/claim3_fsevents_verification.md`
+- `Team Inbox/claim5_apfs_verification.md`
+- `Team Inbox/claim6_cgevent_verification.md`
+- `Team Inbox/tmux_backend_verification.md`
+- `Team Inbox/tcc_live_fire_evidence.md`
+- `Team Inbox/codex1_test_report.md`
+- `Team Inbox/codex1_prior_art_update.md`
+- `Team Inbox/msg_from_claude1_to_codex1_symswift_followup.md`
+- `Team Inbox/msg_from_claude1_to_codex1_9916ebd_ack.md`
+
+### Patent-position correction made during v2
+
+Live web research during this round found that broad "Bonjour/native Swift agent
+mesh" language is unsafe as a standalone primary position because
+`sym-bot/sym-swift` publicly documents an iOS/macOS Swift SDK whose agents
+discover each other over Bonjour and participate in a cross-platform mesh. The
+main patent documents were therefore corrected:
+
+- Claim 3 was demoted from a broad standalone primary to a narrow dependent or
+  combination claim under Claim 1.
+- The surviving Claim 3 distinction is terminal-resident agent control combined
+  with SelfConnect's OS-substrate channels: `os_log`, FSEvents, private
+  pasteboards, APFS checkpoints, CGEvent/AX/iTerm2/tmux backends, and local
+  approval gates.
+- Claim 4, the inline same-device LocalAuthentication / Secure-Enclave approval
+  gate, was elevated to a narrow primary candidate.
+
+The same research also corrected the competitive read on Project Lancelot /
+UAB. Current public UAB materials advertise both Mac and Windows downloads, so
+the SelfConnect moat must not rely on "they do not do Mac." The documented
+technical distinction is that UAB is an app-control bridge exposing CLI,
+library, MCP, and HTTP-server surfaces for desktop application automation,
+whereas SelfConnect-Mac is a terminal-resident multi-agent mesh coordinated via
+macOS-native OS substrates.
+
 ## Reproduction Checklist
 
 On a Mac:
