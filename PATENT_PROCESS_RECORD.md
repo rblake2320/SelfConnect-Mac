@@ -391,6 +391,10 @@ Observed result:
 
 The following `Team Inbox/` records contain the v2 live-fire evidence:
 
+Note: several `Team Inbox/claim*_verification.md` filenames reflect the initial
+verification order before the `sym-swift` prior-art correction. The final claim
+numbering is the one in `PATENT_CLAIMS_DRAFT.md`.
+
 - `Team Inbox/claim2_oslog_verification.md`
 - `Team Inbox/claim3_bonjour_verification.md`
 - `Team Inbox/claim3_fsevents_verification.md`
@@ -400,9 +404,11 @@ The following `Team Inbox/` records contain the v2 live-fire evidence:
 - `Team Inbox/tcc_live_fire_evidence.md`
 - `Team Inbox/codex1_test_report.md`
 - `Team Inbox/codex1_package_verification.md`
+- `Team Inbox/codex1_claim_number_alignment.md`
 - `Team Inbox/codex1_prior_art_update.md`
 - `Team Inbox/msg_from_claude1_to_codex1_symswift_followup.md`
 - `Team Inbox/msg_from_claude1_to_codex1_9916ebd_ack.md`
+- `Team Inbox/msg_from_claude1_to_codex1_03bc9d0_ack.md`
 
 ### Patent-position correction made during v2
 

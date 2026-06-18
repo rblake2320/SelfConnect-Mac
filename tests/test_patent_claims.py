@@ -61,9 +61,9 @@ def test_claim2_oslog_mesh_bus_roundtrip():
     assert any(row["payload"].get("message") == "patent-test-marker" for row in result)
 
 
-# ── Claim 3: FSEvents push inbox ───────────────────────────────────────
+# ── Claim 1 sub-lane: FSEvents push inbox ──────────────────────────────
 @mac_only
-def test_claim3_fsevents_inbox_receives_push():
+def test_claim1_fsevents_inbox_receives_push():
     """Writing a matching file to the watched inbox fires the callback."""
     import threading
     import time
@@ -80,7 +80,7 @@ def test_claim3_fsevents_inbox_receives_push():
     t = threading.Thread(target=listener, daemon=True)
     t.start()
     time.sleep(0.5)
-    (inbox / "msg_claim3.md").write_text("hello", encoding="utf-8")
+    (inbox / "msg_claim1_fsevents.md").write_text("hello", encoding="utf-8")
     # Allow time for either FSEvents push or polling fallback.
     for _ in range(20):
         if received:
@@ -88,36 +88,16 @@ def test_claim3_fsevents_inbox_receives_push():
         time.sleep(0.2)
     stop.set()
     shutil.rmtree(inbox, ignore_errors=True)
-    assert "msg_claim3.md" in received
+    assert "msg_claim1_fsevents.md" in received
 
 
-# ── Claim 4: APFS clone-based O(1) checkpoint ──────────────────────────
+# ── Claim 3: Bonjour LAN peer discovery ────────────────────────────────
 @mac_only
-def test_claim4_apfs_checkpoint_and_rollback():
-    """checkpoint() copies a workspace; rollback() restores it."""
-    from selfconnect_mac.resilience.snapshot import checkpoint, rollback, list_checkpoints
-
-    work = Path(tempfile.mkdtemp(prefix="sc_ws_")) / "workspace"
-    work.mkdir()
-    (work / "file.txt").write_text("v1", encoding="utf-8")
-    snap = checkpoint(work, "claim4_v1")
-    assert snap.exists()
-    assert "claim4_v1" in list_checkpoints(work)
-
-    (work / "file.txt").write_text("v2-corrupted", encoding="utf-8")
-    assert rollback(work, "claim4_v1") is True
-    assert (work / "file.txt").read_text(encoding="utf-8") == "v1"
-
-    shutil.rmtree(work.parent, ignore_errors=True)
-
-
-# ── Claim 5: Bonjour LAN peer discovery ────────────────────────────────
-@mac_only
-def test_claim5_bonjour_publish_and_browse():
+def test_claim3_bonjour_publish_and_browse():
     """publish_service() returns a stoppable handle; browse_services() returns a list."""
     from selfconnect_mac.mesh.multipeer import publish_service, browse_services
 
-    handle = publish_service("sc-claim5-test", 65432, txt={"role": "test"})
+    handle = publish_service("sc-claim3-test", 65432, txt={"role": "test"})
     try:
         peers = browse_services(timeout=1.0)
         assert isinstance(peers, list)
@@ -125,9 +105,9 @@ def test_claim5_bonjour_publish_and_browse():
         handle.stop()
 
 
-# ── Claim 6: Touch ID per-action approval ──────────────────────────────
+# ── Claim 4: Touch ID per-action approval ──────────────────────────────
 @mac_only
-def test_claim6_touchid_require_callable():
+def test_claim4_touchid_require_callable():
     """require() must accept a reason and return bool, even when biometry
     isn't configured (it returns False)."""
     from selfconnect_mac.approval.touch_id import require, is_available
@@ -138,21 +118,41 @@ def test_claim6_touchid_require_callable():
     assert callable(require)
 
 
-# ── Claim 7: Audio mesh signaling ──────────────────────────────────────
+# ── Claim 5: APFS clone-based O(1) checkpoint ──────────────────────────
 @mac_only
-def test_claim7_audio_heartbeat_runs():
+def test_claim5_apfs_checkpoint_and_rollback():
+    """checkpoint() copies a workspace; rollback() restores it."""
+    from selfconnect_mac.resilience.snapshot import checkpoint, rollback, list_checkpoints
+
+    work = Path(tempfile.mkdtemp(prefix="sc_ws_")) / "workspace"
+    work.mkdir()
+    (work / "file.txt").write_text("v1", encoding="utf-8")
+    snap = checkpoint(work, "claim5_v1")
+    assert snap.exists()
+    assert "claim5_v1" in list_checkpoints(work)
+
+    (work / "file.txt").write_text("v2-corrupted", encoding="utf-8")
+    assert rollback(work, "claim5_v1") is True
+    assert (work / "file.txt").read_text(encoding="utf-8") == "v1"
+
+    shutil.rmtree(work.parent, ignore_errors=True)
+
+
+# ── Non-pursued lane: audio mesh signaling ─────────────────────────────
+@mac_only
+def test_audio_heartbeat_runs():
     """heartbeat() schedules a chime + say without blocking the caller."""
     from selfconnect_mac.approval.audio import heartbeat, list_voices
 
     voices = list_voices()
     assert isinstance(voices, list)
     # Heartbeat itself must not raise; actual audio output is OS-side.
-    heartbeat("CLAIM7-AGENT", status="testing")
+    heartbeat("AUDIO-AGENT", status="testing")
 
 
-# ── Claim 8: CGEventPostToPid targeted injection ───────────────────────
+# ── Claim 6: CGEventPostToPid targeted injection ───────────────────────
 @mac_only
-def test_claim8_cgevent_targeted_injection_api():
+def test_claim6_cgevent_targeted_injection_api():
     """CGEventBackend.send requires a PID; verify the API shape."""
     pytest.importorskip("Quartz", reason="pyobjc-framework-Quartz not installed")
     from selfconnect_mac.backends.cgevent import CGEventBackend
@@ -165,24 +165,24 @@ def test_claim8_cgevent_targeted_injection_api():
         backend.send(bogus, "hi")
 
 
-# ── Claim 9: NSPasteboard private named channel ────────────────────────
+# ── Claim 7: Vision OCR last-resort buffer read ────────────────────────
 @mac_only
-def test_claim9_pasteboard_private_channel_roundtrip():
-    from selfconnect_mac.bus.pasteboard import PrivateChannel
-
-    ch = PrivateChannel("sc-claim9-test")
-    ch.post({"hello": "world", "ts": 1})
-    latest = ch.latest()
-    assert latest is not None
-    assert latest.get("hello") == "world"
-
-
-# ── Claim 10: Vision OCR last-resort buffer read ───────────────────────
-@mac_only
-def test_claim10_vision_ocr_api():
+def test_claim7_vision_ocr_api():
     """ocr_image() returns a string (possibly empty when Vision missing or
     image absent)."""
     from selfconnect_mac.capture import ocr_image
 
     result = ocr_image("/nonexistent/path.png")
     assert isinstance(result, str)
+
+
+# ── Claim 8: NSPasteboard private named channel ────────────────────────
+@mac_only
+def test_claim8_pasteboard_private_channel_roundtrip():
+    from selfconnect_mac.bus.pasteboard import PrivateChannel
+
+    ch = PrivateChannel("sc-claim8-test")
+    ch.post({"hello": "world", "ts": 1})
+    latest = ch.latest()
+    assert latest is not None
+    assert latest.get("hello") == "world"
