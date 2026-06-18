@@ -196,7 +196,7 @@ practice.)
 | `approve` hangs | Touch ID configured? Test `bioutil -rc` |
 | FSEvents inbox callback never fires | Full Disk Access if path is outside `~/`; otherwise check FSEvents framework installed |
 | `dns-sd` "MoreComing" but no `Add` | Firewall blocking multicast 5353 |
-| `log stream` shows no events | Subsystem string typo, or `logger` not in `/usr/bin` |
+| `log stream` shows no events | Payload marker typo (`sc_bus`, `sc_agent`, `sc_category`), or `logger` not in `/usr/bin` |
 
 See `PATENT_PROCESS_RECORD.md` for the v1 verification log of these same
 permission checks performed live on 2026-05-13 → 2026-05-18.

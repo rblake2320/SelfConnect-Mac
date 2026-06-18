@@ -50,13 +50,15 @@ Each claim below identifies its implementing source file in this repository so t
 
 **Independent claim 2.** A method for inter-process communication between two or more autonomous AI agent processes on a macOS system, comprising:
 
-1. assigning each agent a unique subsystem identifier of the form `com.<mesh>.<agent_id>` and one or more category identifiers describing event types;
-2. each agent emitting structured event payloads, serialized as JSON, through the macOS unified logging facility under its assigned subsystem and category;
-3. a controller process subscribing to event payloads matching an `NSPredicate` over the subsystem identifier, event category, and/or payload contents via `log stream --predicate`;
+1. assigning each agent a unique agent identifier and one or more category identifiers describing event types;
+2. each agent emitting structured event payloads, serialized as JSON and containing said agent identifier and category identifier, through the macOS unified logging facility;
+3. a controller process subscribing to event payloads matching an `NSPredicate` over the payload contents, subsystem identifier, and/or event category via `log stream --predicate`;
 4. a second consumer issuing point-in-time historical queries over the same predicate via `log show --last <duration>`, the kernel-arbitrated unified log datastore providing tamper-evident persistence;
 5. operating the mesh without binding an open network port, allocating a shared file inbox for the bus, or requiring an inter-agent API endpoint.
 
 **Dependent claim 2.1.** The method of claim 2, wherein agents emit messages via the `logger(1)` command alone, without holding any process-bound framework reference to the logging API, such that agents may be implemented in any language without an `os_log` framework binding.
+
+**Dependent claim 2.1a.** The method of claim 2, wherein the payload contains reserved fields identifying the mesh bus, agent, and category, and consumers filter on said reserved fields after retrieval from the unified logging stream.
 
 **Dependent claim 2.2.** The method of claim 2, wherein the unified logging facility's persistent archive serves as the auditable record of mesh activity, signed-timestamped by the operating system kernel without additional application-supplied cryptography.
 

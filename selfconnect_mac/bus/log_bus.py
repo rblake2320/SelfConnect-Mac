@@ -1,14 +1,14 @@
 """
 Unified logging as a mesh bus.
 
-macOS unified logging (`os_log`) is structured, queryable, and signed-
-timestamped. Each SelfConnect agent emits to its own subsystem
-(`com.selfconnect.<agent_id>`) and the controller subscribes via
-`log stream --predicate ...`.
+macOS unified logging is structured, queryable, and signed-timestamped.
+Each SelfConnect agent emits a JSON payload through the system logger; the
+controller subscribes via `log stream --predicate ...` and filters on the
+payload's `sc_agent` / `sc_category` fields.
 
 This gives the mesh a built-in OS-level pub/sub bus with:
   - zero install / zero port / zero file
-  - structured filtering by subsystem, category, level
+  - structured filtering by payload fields
   - survives reboots (persisted to the system log archive)
   - works across user sessions, across SSH, across users
 
@@ -29,17 +29,24 @@ from typing import Callable, Optional
 
 
 SUBSYSTEM_PREFIX = "com.selfconnect"
+BUS_MARKER = "selfconnect"
 
 
 def emit(agent_id: str, category: str, message: str, **fields) -> None:
-    """Emit a structured log line to this agent's subsystem.
+    """Emit a structured log line to the unified logging stream.
 
     Uses `/usr/bin/logger -p` so it works without any framework imports
     and from any process. On macOS, logger lines are picked up by
     unified logging and queryable via `log stream`.
     """
-    payload = {"message": message, **fields} if fields else {"message": message}
-    line = json.dumps(payload, ensure_ascii=False, default=str)
+    payload = {
+        "sc_bus": BUS_MARKER,
+        "sc_agent": agent_id,
+        "sc_category": category,
+        "message": message,
+        **fields,
+    }
+    line = json.dumps(payload, ensure_ascii=False, default=str, separators=(",", ":"))
     tag = f"{SUBSYSTEM_PREFIX}.{agent_id}:{category}"
     subprocess.run(
         ["/usr/bin/logger", "-t", tag, "--", line],
@@ -57,7 +64,7 @@ def subscribe(
 
     Returns a Subscription you can .stop().
     """
-    predicate = f'eventMessage CONTAINS "{SUBSYSTEM_PREFIX}."'
+    predicate = 'eventMessage CONTAINS "\\"sc_bus\\":\\"selfconnect\\""'
     cmd = ["log", "stream", "--style", "ndjson", "--predicate", predicate]
     if not follow:
         cmd.append("--last")
@@ -77,18 +84,10 @@ def subscribe(
                 line = json.loads(raw)
             except json.JSONDecodeError:
                 continue
-            msg = line.get("eventMessage", "")
-            if SUBSYSTEM_PREFIX not in msg:
+            parsed = _parse_event_message(line.get("eventMessage", ""))
+            if parsed is None:
                 continue
-            # Best-effort parse: `<subsystem>.<agent>:<category>: <json>`
-            try:
-                head, body = msg.split(": ", 1)
-                tag = head.rsplit(" ", 1)[-1]
-                subsys_agent, cat = tag.split(":", 1)
-                agent = subsys_agent.removeprefix(SUBSYSTEM_PREFIX + ".")
-                payload = json.loads(body)
-            except (ValueError, json.JSONDecodeError):
-                continue
+            agent, cat, payload = parsed
             if agent_id != "*" and agent != agent_id:
                 continue
             if category != "*" and cat != category:
@@ -117,7 +116,7 @@ class Subscription:
 
 def query(agent_id: str = "*", category: str = "*", last: str = "5m") -> list[dict]:
     """One-shot query: return matching messages from the last `last` window."""
-    predicate = f'eventMessage CONTAINS "{SUBSYSTEM_PREFIX}."'
+    predicate = 'eventMessage CONTAINS "\\"sc_bus\\":\\"selfconnect\\""'
     try:
         out = subprocess.check_output(
             ["log", "show", "--style", "ndjson", "--last", last, "--predicate", predicate],
@@ -131,20 +130,27 @@ def query(agent_id: str = "*", category: str = "*", last: str = "5m") -> list[di
             line = json.loads(raw)
         except json.JSONDecodeError:
             continue
-        msg = line.get("eventMessage", "")
-        if SUBSYSTEM_PREFIX not in msg:
+        parsed = _parse_event_message(line.get("eventMessage", ""))
+        if parsed is None:
             continue
-        try:
-            head, body = msg.split(": ", 1)
-            tag = head.rsplit(" ", 1)[-1]
-            subsys_agent, cat = tag.split(":", 1)
-            agent = subsys_agent.removeprefix(SUBSYSTEM_PREFIX + ".")
-            payload = json.loads(body)
-        except (ValueError, json.JSONDecodeError):
-            continue
+        agent, cat, payload = parsed
         if agent_id != "*" and agent != agent_id:
             continue
         if category != "*" and cat != category:
             continue
         results.append({"agent": agent, "category": cat, "payload": payload, "ts": line.get("timestamp")})
     return results
+
+
+def _parse_event_message(message: str) -> tuple[str, str, dict] | None:
+    try:
+        payload = json.loads(message)
+    except json.JSONDecodeError:
+        return None
+    if payload.get("sc_bus") != BUS_MARKER:
+        return None
+    agent = str(payload.get("sc_agent") or "")
+    category = str(payload.get("sc_category") or "")
+    if not agent or not category:
+        return None
+    return agent, category, payload

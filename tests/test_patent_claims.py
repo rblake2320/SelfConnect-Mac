@@ -45,15 +45,20 @@ def test_claim1_dual_backend_interchangeable_transport():
 @mac_only
 def test_claim2_oslog_mesh_bus_roundtrip():
     """An agent can emit() a structured event and a later query() returns it."""
+    import time
+
     from selfconnect_mac.bus.log_bus import emit, query
 
     agent = f"test-{os.getpid()}"
     emit(agent, "claim2", "patent-test-marker", trial=1)
-    # log show has a small ingest delay; we don't assert retrieval here
-    # because doing so in CI requires the logd indexer to flush. We do
-    # assert query() runs without raising and returns a list.
-    result = query(agent_id=agent, category="claim2", last="1m")
+    result = []
+    for _ in range(10):
+        result = query(agent_id=agent, category="claim2", last="1m")
+        if result:
+            break
+        time.sleep(1)
     assert isinstance(result, list)
+    assert any(row["payload"].get("message") == "patent-test-marker" for row in result)
 
 
 # ── Claim 3: FSEvents push inbox ───────────────────────────────────────
@@ -83,10 +88,7 @@ def test_claim3_fsevents_inbox_receives_push():
         time.sleep(0.2)
     stop.set()
     shutil.rmtree(inbox, ignore_errors=True)
-    # We assert the watcher *can* be set up + a file *can* be written;
-    # delivery depends on FSEvents permission. Either delivered or empty
-    # is acceptable for CI; the function returning cleanly is the claim.
-    assert isinstance(received, list)
+    assert "msg_claim3.md" in received
 
 
 # ── Claim 4: APFS clone-based O(1) checkpoint ──────────────────────────

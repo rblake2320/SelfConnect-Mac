@@ -62,16 +62,19 @@ def watch_inbox(
     inbox.mkdir(parents=True, exist_ok=True)
     seen = {p.name for p in inbox.glob(file_glob)}
 
+    def _scan_new() -> None:
+        for p in inbox.glob(file_glob):
+            if p.name not in seen:
+                seen.add(p.name)
+                try:
+                    on_message(p)
+                except Exception:
+                    pass
+
     if not _HAS_FSEVENTS:
         # Polling fallback.
         while stop_event is None or not stop_event.is_set():
-            for p in inbox.glob(file_glob):
-                if p.name not in seen:
-                    seen.add(p.name)
-                    try:
-                        on_message(p)
-                    except Exception:
-                        pass
+            _scan_new()
             time.sleep(poll_interval)
         return
 
@@ -84,13 +87,7 @@ def watch_inbox(
         for i in range(num_events):
             d = _event_path(paths[i])
             if d == inbox or d.parent == inbox:
-                for p in inbox.glob(file_glob):
-                    if p.name not in seen:
-                        seen.add(p.name)
-                        try:
-                            on_message(p)
-                        except Exception:
-                            pass
+                _scan_new()
 
     stream = FSEventStreamCreate(
         None,
@@ -110,6 +107,7 @@ def watch_inbox(
         else:
             while not stop_event.is_set():
                 CFRunLoopRunInMode(kCFRunLoopDefaultMode, poll_interval, True)
+                _scan_new()
     finally:
         FSEventStreamStop(stream)
         FSEventStreamInvalidate(stream)
