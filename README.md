@@ -29,6 +29,20 @@ This repo is the Mac-compatible variant intended for `selfconnect-mac`. The Wind
 `PostMessage`/`PrintWindow` behavior still runs when imported on Windows, while macOS
 gets best-effort foreground automation through System Events.
 
+> **v2 (2026-06-17)**: a new `selfconnect_mac/` package adds a pluggable backend
+> layer (iTerm2, tmux, CGEvent, AppleScript) plus Mac-native moat features that
+> Win32 has no analog for: `os_log` mesh bus, FSEvents push inbox, MultipeerConnectivity /
+> Bonjour peer discovery, Touch ID per-action approval, `say`-based audio mesh signaling,
+> APFS clone checkpoints, Vision OCR fallback. See `MAC_V2_ARCHITECTURE.md` and
+> `COMPETITIVE_MAC_LANES.md`. The v1 `self_connect.py` API is unchanged for
+> backward compatibility and prior-art continuity.
+>
+> ```bash
+> python3 -m selfconnect_mac.cli backends   # which backends are available
+> python3 -m selfconnect_mac.cli list       # list addressable terminal targets
+> python3 -m selfconnect_mac.cli --help     # all commands
+> ```
+
 macOS requirements:
 - Python 3.10+
 - Pillow and psutil
@@ -203,7 +217,7 @@ send_frame(target_window, from_hwnd=my_hwnd, payload="hello", topic="chat", ack=
 
 ---
 
-## API Reference (v0.10.0 — 60 exports)
+## API Reference (v0.10.0 — 61 exports)
 
 Full export list and signatures: see `CLAUDE.md` → Key Files section.
 

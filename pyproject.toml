@@ -29,6 +29,16 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+mac = [
+    "atomacos>=3.3.0",
+    "iterm2>=2.7",
+    "pyobjc-framework-ApplicationServices>=10.0",
+    "pyobjc-framework-Cocoa>=10.0",
+    "pyobjc-framework-FSEvents>=10.0",
+    "pyobjc-framework-Quartz>=10.0",
+    "pyobjc-framework-ScreenCaptureKit>=10.0",
+    "pyobjc-framework-Vision>=10.0",
+]
 uia = [
     "pywinauto>=0.6.8",
 ]
@@ -53,13 +63,22 @@ full = [
     "fastapi>=0.115.0",
     "uvicorn[standard]>=0.34.0",
 ]
+test = [
+    "fastapi>=0.115.0",
+    "httpx>=0.28.0",
+    "pytest>=9.0.0",
+    "pytest-asyncio>=1.4.0",
+]
 
 [project.urls]
 Homepage = "https://github.com/rblake2320/selfconnect-mac"
 Repository = "https://github.com/rblake2320/selfconnect-mac"
 
+[project.scripts]
+sc-mac = "selfconnect_mac.cli:main"
+
 [tool.hatch.build.targets.wheel]
-include = ["self_connect.py", "claudego/**"]
+include = ["self_connect.py", "selfconnect_mac/**", "claudego/**"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests", "test_self_connect.py"]
