@@ -1,10 +1,10 @@
 """
-MultipeerConnectivity + Bonjour — room-scale peer discovery.
+Bonjour discovery + MultipeerConnectivity hook — room-scale peer discovery.
 
-MacOS uniquely supports peer-to-peer mesh over Wi-Fi + Bluetooth + AWDL
-with zero networking configuration. Two Macs in the same room discover
-each other and exchange messages without a router, firewall holes, or
-DNS.
+macOS uniquely supports peer discovery over Bonjour and peer-to-peer
+links over Wi-Fi + Bluetooth + AWDL with zero networking configuration.
+This module implements the Bonjour publish/browse layer now and exposes
+the MultipeerConnectivity import hook for the v2.1 MCSession upgrade.
 
 This is a primitive that Win32 has no equivalent of. Lancelot's UAB
 runs on `localhost:3100` and has no peer-to-peer story.
@@ -14,11 +14,12 @@ This module provides:
   1. Bonjour service publishing/browsing for LAN discovery
      (cross-platform — Macs can also find Windows/Linux peers this way).
 
-  2. A skeleton for MultipeerConnectivity (Apple-only, no routing).
+  2. An import-gated hook for MultipeerConnectivity (Apple-only, no routing).
 
 Bonjour requires pyobjc-framework-Foundation. MCSession is bridged via
-pyobjc-framework-MultipeerConnectivity but is complex enough we provide
-the import path and document the Apple SPI to call into.
+pyobjc-framework-MultipeerConnectivity, but full delegate wiring is a
+v2.1 follow-up and is intentionally not represented as live-fired in the
+verification record.
 """
 
 from __future__ import annotations

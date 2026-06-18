@@ -13,14 +13,14 @@ This package provides the rest, organized into three tiers:
     backends/tmux.py           tmux send-keys / capture-pane (headless, SSH-safe)
     backends/cgevent.py        CGEvent + CGEventPostToPid (PostMessage twin)
     backends/applescript.py    Legacy AppleScript path (preserves prior art)
-    capture.py                 CGWindowListCreateImage + ScreenCaptureKit
+    capture.py                 CGWindowListCreateImage + ScreenCaptureKit hook
     windows.py                 CGWindowListCopyWindowInfo + AXUIElement
 
   Tier 2 — Mac-only lanes (no Win32 / no Lancelot equivalent)
     bus/log_bus.py             os_log as mesh bus (built-in queryable pub/sub)
     bus/fsevents_inbox.py      FSEvents push notifications (no polling)
     bus/pasteboard.py          NSPasteboard private named channels
-    mesh/multipeer.py          MultipeerConnectivity peer-to-peer mesh
+    mesh/multipeer.py          Bonjour discovery + MultipeerConnectivity hook
     approval/touch_id.py       LocalAuthentication biometric approval
     approval/audio.py          say / NSSound / AVSpeechSynthesizer heartbeats
     approval/notifications.py  UNUserNotificationCenter critical alerts

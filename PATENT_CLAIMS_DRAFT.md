@@ -84,6 +84,8 @@ Each claim below identifies its implementing source file in this repository so t
 
 **Differentiation note:** Public 2026 prior art includes Bonjour/native Swift agent-mesh work (`sym-bot/sym-swift`), so this claim should not be filed as a broad generic Bonjour or Multipeer agent-mesh claim. The defensible distinction is the combination with SelfConnect's OS-substrate terminal/agent-control stack, including unified-log bus, FSEvents inbox, pasteboard channels, APFS checkpoints, and same-device approval gates.
 
+**Implementation status note:** The current v2 code live-verifies the Bonjour publish/browse layer. The MultipeerConnectivity / `MCSession` upgrade is represented by an import-gated hook and claim-drafting path, not by a completed live-fire `MCSession` delegate implementation.
+
 **Implementing files:** `selfconnect_mac/mesh/multipeer.py`.
 
 ---

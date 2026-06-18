@@ -78,7 +78,7 @@ selfconnect_mac/
 | `bus/log_bus.py` | OS-native pub/sub via `os_log` + `log stream` predicates | ETW (admin-only, much harder) |
 | `bus/fsevents_inbox.py` | Sub-second push notification on inbox writes | ReadDirectoryChangesW (manual) |
 | `bus/pasteboard.py` | Typed multi-format private channels via NSPasteboard | None |
-| `mesh/multipeer.py` | LAN peer discovery (Bonjour) + zero-config Wi-Fi/BT mesh (MultipeerConnectivity) | None |
+| `mesh/multipeer.py` | LAN peer discovery (Bonjour) + import-gated MultipeerConnectivity/AWDL upgrade hook | None |
 | `approval/touch_id.py` | Biometric per-action approval | Windows Hello biometric API exists but no mesh primitive built on it |
 | `approval/audio.py` | TTS heartbeat / inter-room status signal | TTS exists; not used as mesh primitive |
 | `resilience/snapshot.py` | O(1) APFS clone checkpoints | Volume Shadow Copy (admin, heavyweight) |

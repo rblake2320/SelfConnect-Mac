@@ -60,7 +60,7 @@ Each row identifies a macOS primitive employed by SelfConnect on the date noted,
 | 13 | **FSEvents** push notifications | `selfconnect_mac/bus/fsevents_inbox.py` | Sub-second notification of inbox writes; replaces polling. |
 | 14 | **NSPasteboard private named channels** | `selfconnect_mac/bus/pasteboard.py` | Typed multi-format private pasteboards (`pasteboardWithName`) as IPC channels — distinct from the system clipboard. |
 | 15 | **Bonjour / mDNS** publish & browse | `selfconnect_mac/mesh/multipeer.py` | Zero-config LAN agent discovery. |
-| 16 | **MultipeerConnectivity** framework | `selfconnect_mac/mesh/multipeer.py` | Peer-to-peer Wi-Fi/BT/AWDL mesh without router. No Win32 equivalent. |
+| 16 | **MultipeerConnectivity** framework hook | `selfconnect_mac/mesh/multipeer.py` | Import-gated optional upgrade path for peer-to-peer Wi-Fi/BT/AWDL mesh; full `MCSession` delegate wiring is v2.1 work. No Win32 equivalent at the OS-framework level. |
 | 17 | **LocalAuthentication** (Touch ID / Face ID) | `selfconnect_mac/approval/touch_id.py` | Biometric per-action approval gate for destructive mesh actions. |
 | 18 | **`say` / `afplay` / NSSound** | `selfconnect_mac/approval/audio.py` | Audio channel for cross-room mesh status announcement. |
 | 19 | **AppleScript `display notification` + `terminal-notifier`** | `selfconnect_mac/approval/notifications.py` | System-wide banner alerts including critical-priority. |

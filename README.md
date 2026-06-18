@@ -31,8 +31,8 @@ gets best-effort foreground automation through System Events.
 
 > **v2 (2026-06-17)**: a new `selfconnect_mac/` package adds a pluggable backend
 > layer (iTerm2, tmux, CGEvent, AppleScript) plus Mac-native moat features that
-> Win32 has no analog for: `os_log` mesh bus, FSEvents push inbox, MultipeerConnectivity /
-> Bonjour peer discovery, Touch ID per-action approval, `say`-based audio mesh signaling,
+> Win32 has no analog for: `os_log` mesh bus, FSEvents push inbox, Bonjour peer
+> discovery with a MultipeerConnectivity/AWDL upgrade hook, Touch ID per-action approval, `say`-based audio mesh signaling,
 > APFS clone checkpoints, Vision OCR fallback. See `MAC_V2_ARCHITECTURE.md`,
 > `COMPETITIVE_MAC_LANES.md`, `MAC_PERMISSIONS_GUIDE.md` (TCC failure modes), and
 > `PATENT_CLAIMS_DRAFT.md` + `PATENT_CLAIMS_PRIOR_ART.md` for the claim record.
