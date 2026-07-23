@@ -25,7 +25,6 @@ import shutil
 import subprocess
 from pathlib import Path
 
-
 SNAPSHOT_DIR_NAME = ".selfconnect_snapshots"
 
 

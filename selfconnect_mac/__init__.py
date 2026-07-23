@@ -22,8 +22,8 @@ This package provides the rest, organized into three tiers:
     bus/pasteboard.py          NSPasteboard private named channels
     mesh/multipeer.py          Bonjour discovery + MultipeerConnectivity hook
     approval/touch_id.py       LocalAuthentication biometric approval
-    approval/audio.py          say / NSSound / AVSpeechSynthesizer heartbeats
-    approval/notifications.py  UNUserNotificationCenter critical alerts
+    approval/audio.py          say / afplay audible heartbeats
+    approval/notifications.py  banner notifications (terminal-notifier / AppleScript)
     resilience/snapshot.py     APFS clones for atomic mesh checkpoints
 
   Tier 3 — Orchestration
@@ -39,12 +39,12 @@ record of Mac-only differentiators vs. Win32 and competing app-control SDKs.
 
 from __future__ import annotations
 
-__version__ = "2.0.0-dev"
+__version__ = "2.0.0"
 
 __all__ = [
+    "BackendUnavailable",
     "get_backend",
     "list_backends",
-    "BackendUnavailable",
 ]
 
 

@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "selfconnect-mac"
-version = "0.10.0"
+version = "2.0.0"
 description = "Mac-compatible SelfConnect bridge for AI agent orchestration, with Win32 behavior preserved on Windows and native macOS fallbacks."
 readme = "README.md"
 license = { file = "LICENSE" }
@@ -66,8 +66,10 @@ full = [
 test = [
     "fastapi>=0.115.0",
     "httpx>=0.28.0",
-    "pytest>=9.0.0",
-    "pytest-asyncio>=1.4.0",
+    "httpx2>=0.1.0",
+    "pydantic>=2.0.0",
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.24.0",
 ]
 
 [project.urls]
@@ -79,6 +81,11 @@ sc-mac = "selfconnect_mac.cli:main"
 
 [tool.hatch.build.targets.wheel]
 include = ["self_connect.py", "selfconnect_mac/**", "claudego/**"]
+
+[tool.ruff.lint]
+# Pin the rule set explicitly: CI installs the latest ruff, whose expanded
+# defaults would otherwise change what "passing lint" means over time.
+select = ["E4", "E7", "E9", "F"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests", "test_self_connect.py"]

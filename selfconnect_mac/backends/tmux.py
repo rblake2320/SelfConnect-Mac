@@ -16,7 +16,6 @@ from __future__ import annotations
 
 import shutil
 import subprocess
-from typing import Optional
 
 from .base import Backend, Target
 
@@ -99,7 +98,7 @@ class TmuxBackend(Backend):
             extra={"session": sess},
         )
 
-    def capture(self, target: Target, out_path: str) -> Optional[str]:
+    def capture(self, target: Target, out_path: str) -> str | None:
         # No pixel output from tmux; write the text buffer instead.
         text = self.read(target, tail=100000)
         with open(out_path, "w", encoding="utf-8") as fh:

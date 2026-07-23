@@ -18,12 +18,11 @@ from __future__ import annotations
 import os
 import subprocess
 
-
 try:
     from LocalAuthentication import (  # type: ignore
         LAContext,
-        LAPolicyDeviceOwnerAuthenticationWithBiometrics,
         LAPolicyDeviceOwnerAuthentication,
+        LAPolicyDeviceOwnerAuthenticationWithBiometrics,
     )
 
     _HAS_LA = True

@@ -24,12 +24,12 @@ import sys
 sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 sys.stderr.reconfigure(encoding="utf-8", errors="replace")
 
-import argparse
-import fnmatch
-import re
-import time
-from dataclasses import dataclass, field
-from typing import Optional
+import argparse  # noqa: E402  # stdout/stderr must be reconfigured before anything can print
+import fnmatch  # noqa: E402
+import re  # noqa: E402
+import time  # noqa: E402
+from dataclasses import dataclass, field  # noqa: E402
+from typing import Optional  # noqa: E402
 
 # ── SelfConnect import ────────────────────────────────────────────────────────
 try:

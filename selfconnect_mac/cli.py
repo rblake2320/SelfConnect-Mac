@@ -201,51 +201,73 @@ def build_parser() -> argparse.ArgumentParser:
     sub.add_parser("list", help="list addressable terminal targets")
 
     r = sub.add_parser("read", help="read last N chars of a target's buffer")
-    r.add_argument("target"); r.add_argument("--tail", type=int, default=4000)
+    r.add_argument("target")
+    r.add_argument("--tail", type=int, default=4000)
 
     s = sub.add_parser("send", help="inject text into a target")
-    s.add_argument("target"); s.add_argument("text"); s.add_argument("--submit", action="store_true")
+    s.add_argument("target")
+    s.add_argument("text")
+    s.add_argument("--submit", action="store_true")
 
     a = sub.add_parser("ask", help="send + submit + read result")
-    a.add_argument("target"); a.add_argument("text"); a.add_argument("--wait", type=float, default=4.0); a.add_argument("--tail", type=int, default=2000)
+    a.add_argument("target")
+    a.add_argument("text")
+    a.add_argument("--wait", type=float, default=4.0)
+    a.add_argument("--tail", type=int, default=2000)
 
     sb = sub.add_parser("submit", help="press Enter in a target")
     sb.add_argument("target")
 
     w = sub.add_parser("watch", help="tail multiple targets")
-    w.add_argument("targets", nargs="+"); w.add_argument("--interval", type=float, default=2.0)
-    w.add_argument("--cycles", type=int, default=0); w.add_argument("--tail", type=int, default=2000)
+    w.add_argument("targets", nargs="+")
+    w.add_argument("--interval", type=float, default=2.0)
+    w.add_argument("--cycles", type=int, default=0)
+    w.add_argument("--tail", type=int, default=2000)
 
     sp = sub.add_parser("spawn", help="create a new agent terminal")
-    sp.add_argument("title"); sp.add_argument("cwd"); sp.add_argument("--command", default="claude")
+    sp.add_argument("title")
+    sp.add_argument("cwd")
+    sp.add_argument("--command", default="claude")
 
     cap = sub.add_parser("capture", help="screenshot a target's window")
-    cap.add_argument("target"); cap.add_argument("out")
+    cap.add_argument("target")
+    cap.add_argument("out")
 
     be = sub.add_parser("bus-emit", help="emit a structured event to the os_log mesh bus")
-    be.add_argument("agent"); be.add_argument("category"); be.add_argument("message")
+    be.add_argument("agent")
+    be.add_argument("category")
+    be.add_argument("message")
 
     bt = sub.add_parser("bus-tail", help="tail the os_log mesh bus")
-    bt.add_argument("--agent"); bt.add_argument("--category")
+    bt.add_argument("--agent")
+    bt.add_argument("--category")
 
     no = sub.add_parser("notify", help="show a system notification")
-    no.add_argument("title"); no.add_argument("message"); no.add_argument("--critical", action="store_true")
+    no.add_argument("title")
+    no.add_argument("message")
+    no.add_argument("--critical", action="store_true")
 
     sy = sub.add_parser("say", help="speak text aloud")
-    sy.add_argument("text"); sy.add_argument("--voice", default="Daniel")
+    sy.add_argument("text")
+    sy.add_argument("--voice", default="Daniel")
 
     ap = sub.add_parser("approve", help="biometric approval gate")
-    ap.add_argument("reason"); ap.add_argument("--biometric-only", action="store_true")
+    ap.add_argument("reason")
+    ap.add_argument("--biometric-only", action="store_true")
     ap.add_argument("--timeout", type=float, default=30.0)
 
     ch = sub.add_parser("checkpoint", help="APFS-clone a workspace into a labeled snapshot")
-    ch.add_argument("workspace"); ch.add_argument("label")
+    ch.add_argument("workspace")
+    ch.add_argument("label")
 
     rb = sub.add_parser("rollback", help="restore a workspace to a labeled snapshot")
-    rb.add_argument("workspace"); rb.add_argument("label")
+    rb.add_argument("workspace")
+    rb.add_argument("label")
 
     pp = sub.add_parser("peer-publish", help="advertise this agent on the LAN via Bonjour")
-    pp.add_argument("name"); pp.add_argument("port", type=int); pp.add_argument("--role")
+    pp.add_argument("name")
+    pp.add_argument("port", type=int)
+    pp.add_argument("--role")
 
     pb = sub.add_parser("peer-browse", help="discover other agents on the LAN")
     pb.add_argument("--timeout", type=float, default=3.0)
@@ -285,7 +307,7 @@ def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     backend = None
     if args.cmd not in NO_BACKEND:
-        from . import get_backend, BackendUnavailable
+        from . import BackendUnavailable, get_backend
 
         try:
             backend = get_backend(args.backend)

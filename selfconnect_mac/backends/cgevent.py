@@ -24,9 +24,7 @@ back to AppleScript `contents of window`.
 
 from __future__ import annotations
 
-import os
 import subprocess
-from typing import Optional
 
 from .base import Backend, Target
 
@@ -153,7 +151,7 @@ class CGEventBackend(Backend):
         except Exception:
             return ""
 
-    def capture(self, target: Target, out_path: str) -> Optional[str]:
+    def capture(self, target: Target, out_path: str) -> str | None:
         from ..capture import capture_cg_window
 
         try:

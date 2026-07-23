@@ -18,7 +18,6 @@ already does.
 from __future__ import annotations
 
 import sys
-from typing import Optional
 
 from .base import Backend, Target
 
@@ -75,7 +74,7 @@ class AppleScriptBackend(Backend):
         text = sc.get_text_uia(int(target.ident)) or ""
         return text[-tail:]
 
-    def capture(self, target: Target, out_path: str) -> Optional[str]:
+    def capture(self, target: Target, out_path: str) -> str | None:
         sc = self._legacy()
         try:
             return sc.save_capture(int(target.ident), out_path, crop=False)

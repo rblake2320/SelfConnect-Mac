@@ -27,7 +27,6 @@ from __future__ import annotations
 import socket
 from dataclasses import dataclass
 
-
 SERVICE_TYPE = "_selfconnect._tcp."
 SERVICE_DOMAIN = "local."
 
@@ -40,7 +39,7 @@ class Peer:
     txt: dict[str, str]
 
 
-def publish_service(name: str, port: int, txt: dict[str, str] | None = None) -> "ServiceHandle":
+def publish_service(name: str, port: int, txt: dict[str, str] | None = None) -> ServiceHandle:
     """Advertise this agent on the LAN via Bonjour/mDNS.
 
     Other Macs (and any host with mDNS) will see this service and can
@@ -115,7 +114,7 @@ def browse_services(timeout: float = 3.0) -> list[Peer]:
     return peers
 
 
-def _publish_via_cli(name: str, port: int, txt: dict[str, str]) -> "ServiceHandle":
+def _publish_via_cli(name: str, port: int, txt: dict[str, str]) -> ServiceHandle:
     import subprocess
 
     cmd = ["/usr/bin/dns-sd", "-R", name, SERVICE_TYPE, SERVICE_DOMAIN, str(port)]

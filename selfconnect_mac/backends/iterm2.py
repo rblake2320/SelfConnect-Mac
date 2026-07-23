@@ -20,7 +20,6 @@ from __future__ import annotations
 
 import asyncio
 import os
-from typing import Optional
 
 from .base import Backend, Target
 
@@ -103,7 +102,7 @@ class ITerm2Backend(Backend):
     def spawn(self, title: str, cwd: str, command: str = "claude") -> Target:
         async def _go():
             conn = await self._connect()
-            app = await iterm2.async_get_app(conn)
+            await iterm2.async_get_app(conn)
             window = await iterm2.Window.async_create(conn, command=f"/bin/zsh -lc 'cd {cwd!r} && {command}'")
             session = window.current_tab.current_session
             await session.async_set_name(title)
@@ -116,7 +115,7 @@ class ITerm2Backend(Backend):
 
         return _run(_go())
 
-    def capture(self, target: Target, out_path: str) -> Optional[str]:
+    def capture(self, target: Target, out_path: str) -> str | None:
         # iTerm2's API doesn't expose pixel capture directly; fall back to
         # CGWindowListCreateImage via the capture module.
         from ..capture import capture_iterm2_session

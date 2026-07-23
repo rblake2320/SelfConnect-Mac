@@ -11,7 +11,6 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import Optional
 
 
 @dataclass(frozen=True)
@@ -59,7 +58,7 @@ class Backend(ABC):
         """
         raise NotImplementedError(f"{self.name} backend does not implement spawn()")
 
-    def capture(self, target: Target, out_path: str) -> Optional[str]:
+    def capture(self, target: Target, out_path: str) -> str | None:
         """Save a per-window image to `out_path`. Returns the path or None.
 
         Default implementation returns None — backends that can capture override.

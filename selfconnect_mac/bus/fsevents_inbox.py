@@ -17,27 +17,25 @@ from __future__ import annotations
 
 import os
 import time
+from collections.abc import Callable
 from pathlib import Path
-from typing import Callable, Optional
-
 
 try:
-    from FSEvents import (  # type: ignore
-        FSEventStreamCreate,
-        FSEventStreamScheduleWithRunLoop,
-        FSEventStreamStart,
-        FSEventStreamStop,
-        FSEventStreamInvalidate,
-        FSEventStreamRelease,
-        kFSEventStreamEventIdSinceNow,
-        kFSEventStreamCreateFlagFileEvents,
-    )
     from CoreFoundation import (  # type: ignore
         CFRunLoopGetCurrent,
         CFRunLoopRun,
         CFRunLoopRunInMode,
-        CFRunLoopStop,
         kCFRunLoopDefaultMode,
+    )
+    from FSEvents import (  # type: ignore
+        FSEventStreamCreate,
+        FSEventStreamInvalidate,
+        FSEventStreamRelease,
+        FSEventStreamScheduleWithRunLoop,
+        FSEventStreamStart,
+        FSEventStreamStop,
+        kFSEventStreamCreateFlagFileEvents,
+        kFSEventStreamEventIdSinceNow,
     )
 
     _HAS_FSEVENTS = True

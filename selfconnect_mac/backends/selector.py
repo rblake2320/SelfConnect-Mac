@@ -11,8 +11,6 @@ Priority order (highest ROI first):
 
 from __future__ import annotations
 
-from typing import Optional
-
 from .applescript import AppleScriptBackend
 from .base import Backend
 from .cgevent import CGEventBackend
@@ -59,7 +57,7 @@ def available_names() -> list[str]:
     return [name for name in _PRIORITY if _REGISTRY[name].is_available()]
 
 
-def find_backend_for_target(ident_hint: str) -> Optional[Backend]:
+def find_backend_for_target(ident_hint: str) -> Backend | None:
     """Best-effort: pick a backend that can address `ident_hint`.
 
     tmux ids look like 'session:window.pane' or '%N';

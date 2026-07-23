@@ -22,11 +22,9 @@ server, not an OS-native channel.
 from __future__ import annotations
 
 import json
-import shlex
 import subprocess
 import threading
-from typing import Callable, Optional
-
+from collections.abc import Callable
 
 SUBSYSTEM_PREFIX = "com.selfconnect"
 BUS_MARKER = "selfconnect"
@@ -59,7 +57,7 @@ def subscribe(
     agent_id: str = "*",
     category: str = "*",
     follow: bool = True,
-) -> "Subscription":
+) -> Subscription:
     """Subscribe to the bus. `on_message(agent_id, category, payload)` fires per line.
 
     Returns a Subscription you can .stop().
