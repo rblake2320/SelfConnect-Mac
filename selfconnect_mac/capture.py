@@ -20,7 +20,6 @@ from __future__ import annotations
 import os
 import shutil
 import subprocess
-from typing import Optional
 
 try:
     import Quartz  # type: ignore
@@ -30,7 +29,7 @@ except ImportError:
     _HAS_QUARTZ = False
 
 
-def capture_cg_window(window_id: int, out_path: str) -> Optional[str]:
+def capture_cg_window(window_id: int, out_path: str) -> str | None:
     """Capture a single window by CGWindowID. Returns out_path or None."""
     # Prefer the CLI form — same result, no PyObjC needed, always available.
     if shutil.which("screencapture"):
@@ -68,10 +67,15 @@ def capture_cg_window(window_id: int, out_path: str) -> Optional[str]:
     return None
 
 
-def capture_iterm2_session(session_uuid: str, out_path: str) -> Optional[str]:
-    """Map an iTerm2 session uuid -> its CGWindowID, then capture."""
-    # iTerm2's window titles include the session name; cross-reference
-    # with CGWindowList to find the right WindowID.
+def capture_iterm2_session(session_uuid: str, out_path: str) -> str | None:
+    """Best-effort capture of an iTerm2 window.
+
+    `session_uuid` is accepted for API stability but is NOT used for
+    disambiguation yet: without the iTerm2 Python API connected there is
+    no reliable uuid -> CGWindowID mapping, so this captures the
+    frontmost iTerm2 window. Per-session precision requires the iterm2
+    backend (`backends/iterm2.py`) — use its capture path when available.
+    """
     from .windows import list_cg_windows
 
     candidates = [w for w in list_cg_windows() if w.owner == "iTerm2"]

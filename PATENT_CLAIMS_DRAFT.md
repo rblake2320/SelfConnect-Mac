@@ -167,6 +167,8 @@ Each claim below identifies its implementing source file in this repository so t
 
 **Implementing files:** `selfconnect_mac/bus/pasteboard.py`.
 
+**Implementation status (accuracy note, 2026-07-23):** elements (1) and (3) — private named pasteboard allocation and `changeCount`-based new-message detection — are implemented and live-fired (see `tests/test_patent_claims.py` pasteboard roundtrip). Elements (2) and (4) as they concern *multiple* typed payloads per message are drafted claim scope only: the current code posts a single JSON-string payload via `NSPasteboardTypeString`. Multi-typed payload wiring is a v2.1 follow-up and is intentionally not represented as live-fired in the verification record.
+
 ---
 
 ## Compound system claim

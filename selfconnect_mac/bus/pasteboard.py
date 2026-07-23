@@ -8,9 +8,14 @@ a monotonically increasing change count, so subscribers can poll for
 new data without storing the entire history.
 
 This is a richer cross-agent transport than pbcopy/pbpaste:
-  - multiple typed payloads per message (text + image + JSON together)
   - private namespace per mesh
   - change count = O(1) "is there anything new" check
+
+The current implementation posts a single JSON-string payload per
+message (`NSPasteboardTypeString`). NSPasteboard itself supports
+multiple typed payloads per item (text + image + JSON together); wiring
+that multi-typed path is a v2.1 follow-up and is intentionally not
+represented as implemented or live-fired here.
 
 Requires pyobjc-framework-Cocoa; degrades to /tmp filesystem channels.
 """
@@ -21,7 +26,6 @@ import json
 import tempfile
 import time
 from pathlib import Path
-
 
 try:
     from AppKit import NSPasteboard, NSPasteboardTypeString  # type: ignore

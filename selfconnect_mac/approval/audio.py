@@ -2,11 +2,16 @@
 Audio channels — heartbeat, status, voice announcement.
 
 Sometimes the right "is the mesh still alive" signal is an audible chime
-in the next room. This module provides three layers:
+in the next room. This module provides two layers, both implemented via
+stock CLI tools (`/usr/bin/say`, `/usr/bin/afplay`) so they work with no
+optional dependencies:
 
   1. `say(text, voice)`         — built-in TTS announcement.
   2. `chime(name)`              — short system sound for status.
-  3. `voice_loop()`             — STT input (optional, requires Speech).
+
+Richer paths (AVSpeechSynthesizer voices, Speech-framework STT input)
+are v2.1 follow-ups and are intentionally not represented as implemented
+or live-fired here.
 
 Win32 has TTS but no equivalent for inter-room mesh signaling that
 "just works" without setup. macOS ships voices and system sounds.
@@ -16,7 +21,6 @@ from __future__ import annotations
 
 import shutil
 import subprocess
-
 
 SYSTEM_SOUND_DIR = "/System/Library/Sounds"
 

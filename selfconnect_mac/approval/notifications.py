@@ -1,17 +1,21 @@
 """
-System notifications — banners, critical alerts, badge counts.
+System notifications — banners for mesh events.
 
-macOS notifications survive Space switches and screen lock; critical
-alerts bypass Do Not Disturb. For mesh events the owner needs to see
-even if their terminal is buried, this is the cleanest channel.
+macOS notifications survive Space switches and screen lock. For mesh
+events the owner needs to see even if their terminal is buried, this is
+the cleanest channel.
 
-Three tiers:
+Two implemented tiers:
 
   1. AppleScript `display notification` — always works, no install.
   2. `terminal-notifier` CLI — if installed, supports click-actions
      and reply boxes.
-  3. UNUserNotificationCenter (pyobjc-framework-UserNotifications) —
-     full control: critical alerts, sound names, action buttons.
+
+A third tier — UNUserNotificationCenter (pyobjc-framework-
+UserNotifications) with true critical alerts, sound names, and action
+buttons — is a v2.1 follow-up. True Do-Not-Disturb bypass requires the
+critical-alert entitlement and is intentionally not represented as
+implemented or live-fired here.
 """
 
 from __future__ import annotations
@@ -51,11 +55,12 @@ def notify(title: str, message: str, subtitle: str = "", sound: str = "default")
 
 
 def critical(title: str, message: str) -> None:
-    """A critical-priority notification that bypasses Do Not Disturb.
+    """A high-urgency notification: regular banner + an audible chime.
 
-    Falls back to a regular notification + an audible chime if the
-    critical-alert entitlement isn't granted (it requires Apple approval
-    for distribution apps; works during development).
+    This does NOT bypass Do Not Disturb. True critical alerts require
+    UNUserNotificationCenter plus the Apple-granted critical-alert
+    entitlement — a v2.1 follow-up. Until then this is a best-effort
+    "loud" notification only.
     """
     from . import audio
 
