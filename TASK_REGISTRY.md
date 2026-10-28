@@ -2,12 +2,13 @@
 **Purpose:** Prevent double-agent redundancy. Before starting any task, check this file. If it's listed, it's claimed. Update status when done.
 
 **Mesh:** A (Claude/orchestrator) · B (Claude/worker) · C (Gemini CLI v0.40.1) · D (Codex)
-**Last updated:** 2026-05-04 by Agent-B
+**Last updated:** 2026-10-28 UTC by Mac Codex (FaceLink entry only; older rows retained)
 
 ---
 
 | Task | Assigned To | Status | Repo / Location | Notes |
 |------|-------------|--------|-----------------|-------|
+| FaceLink iPhone reading/recovery + records audit | Mac Codex `mac-codex-172d7e5b`; Windows `facelink-windows-01a170a1` owns integration/Jira | SOFTWARE COMPLETE; RECORDS RECONCILIATION IN PROGRESS | [facelink PR6](https://github.com/rblake2320/facelink/pull/6); Jira FL-1 | Accepted evidence `7696a12`, CI `40618408305`; renewal 26.585s, outage/recovery 202.774s, same-photo spoken-word zoom 40.345s. Clean iPhone Release restored OFF. Current Mac window 673, tty ttys011 verified after resume; thread FaceLink iPhone / FL-1 / Verified & Records. No duplicate build or new project: ordinary/glossy/lighting/distance and current owner-heard observations remain pending. Exact-site Jira connector grant differs; team readback requested. |
 | GitHub CI audit — scan all 50 repos, identify failures | B | COMPLETE | all rblake2320 repos | 8 failing repos catalogued with root causes |
 | airgap-sop ruff fix — all 22 errors cleared | B | COMPLETE | rblake2320/airgap-sop | CI GREEN · commit `1a5261a` |
 | selfconnect ruff fix | A | COMPLETE | rblake2320/selfconnect | CI GREEN |
