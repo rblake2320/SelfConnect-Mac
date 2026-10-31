@@ -160,10 +160,23 @@ end tell'''
             if text:
                 script = f'tell application "Terminal" to do script "{_as_str(text)}" in window id {int(ident)}'
                 _ssh(self.host, _osa(script))
-                time.sleep(0.4)
-            _ssh(self.host, _osa(
-                f'tell application "Terminal" to do script (character id 13) in window id {int(ident)}'))
-            return
+            # Verified 2026-10-31: a CR 0.4 s after the text is still swallowed,
+            # one several seconds later is not. So: press Enter, read back, and
+            # press again (bounded) until the text no longer sits in the box.
+            probe = text.strip()[:40]
+            for delay in (1.5, 3.0, 5.0):
+                time.sleep(delay)
+                _ssh(self.host, _osa(
+                    f'tell application "Terminal" to do script (character id 13) in window id {int(ident)}'))
+                if not probe:
+                    return
+                time.sleep(1.5)
+                if not self._in_prompt_box(ident, probe):
+                    return
+            raise RuntimeError(
+                f"{self.host} window {ident}: message still in the prompt box after 3 Enter presses "
+                "(session busy? read it back and `submit` later)")
+
         # Partial input needs keystrokes into the focused window. This is
         # TCC-gated (Accessibility for sshd-keygen-wrapper) and slow (one
         # keystroke per character), so it is bounded and fails loudly.
@@ -180,6 +193,15 @@ tell application "System Events" to keystroke "{_as_str(text)}"'''
                 "Use submit=True (sc-mac send --submit) or a tmux target.") from e
 
     # -- read --------------------------------------------------------------
+
+    def _in_prompt_box(self, ident: str, probe: str) -> bool:
+        """True if `probe` text appears after the LAST prompt marker (❯) of the window,
+        i.e. it was typed but not submitted. Claude Code echoes submitted prompts as
+        '❯ text' too, but a later marker or reply follows them."""
+        screen = self.read(Target(ident=self._wrap(ident), title=""), tail=3000)
+        last = screen.rfind("❯")
+        return last != -1 and probe in screen[last:]
+
     def read(self, target: Target, tail: int = 4000) -> str:
         ident = self._local_ident(target)
         if self.kind == "tmux":

@@ -55,19 +55,37 @@ def test_terminal_enumerate_parses_window_ids():
     assert "osascript" in run.call_args[0][0][-1]
 
 
-def test_terminal_send_uses_do_script_then_separate_cr():
-    with mock.patch.object(subprocess, "run", return_value=_ok()) as run, \
+def test_terminal_send_types_then_presses_enter_until_box_clear():
+    # run() sequence: do script text, CR, read (still in box), CR, read (clear)
+    reads = iter(['stuff\n❯ say "hi"\n  mode line', 'stuff\n❯ say "hi"\n⏺ ok\n❯ \n'])
+    def fake_run(cmd, **kw):
+        if "contents of selected tab" in cmd[-1]:
+            return _ok(next(reads))
+        return _ok()
+    with mock.patch.object(subprocess, "run", side_effect=fake_run) as run, \
          mock.patch.object(remote.time, "sleep"):
         RemoteBackend("mini", "terminal").send(Target("mini/1436", "x"), 'say "hi"')
     cmds = [c[0][0][-1] for c in run.call_args_list]
-    assert len(cmds) == 2
     assert "do script" in cmds[0] and "in window id 1436" in cmds[0] and '\\"hi\\"' in cmds[0]
-    assert "character id 13" in cmds[1] and "in window id 1436" in cmds[1]  # separate Enter
-    assert all("System Events" not in c for c in cmds)  # no keystroke path, no Accessibility needed
+    assert sum("character id 13" in c for c in cmds) == 2   # pressed Enter twice
+    assert sum("contents of selected tab" in c for c in cmds) == 2
+    assert all("System Events" not in c for c in cmds)
+
+
+def test_terminal_send_gives_up_after_three_enters():
+    def fake_run(cmd, **kw):
+        if "contents of selected tab" in cmd[-1]:
+            return _ok("❯ stuck message\n  mode line")
+        return _ok()
+    with mock.patch.object(subprocess, "run", side_effect=fake_run), \
+         mock.patch.object(remote.time, "sleep"):
+        with pytest.raises(RuntimeError, match="still in the prompt box"):
+            RemoteBackend("mini", "terminal").send(Target("mini/1436", "x"), "stuck message")
 
 
 def test_terminal_submit_sends_only_cr():
-    with mock.patch.object(subprocess, "run", return_value=_ok()) as run:
+    with mock.patch.object(subprocess, "run", return_value=_ok()) as run, \
+         mock.patch.object(remote.time, "sleep"):
         RemoteBackend("mini", "terminal").send(Target("mini/1436", "x"), "", submit=True)
     cmds = [c[0][0][-1] for c in run.call_args_list]
     assert len(cmds) == 1 and "character id 13" in cmds[0]
