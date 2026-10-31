@@ -35,8 +35,9 @@ def test_tmux_send_literal_then_enter():
     with mock.patch.object(subprocess, "run", return_value=_ok()) as run:
         RemoteBackend("mini", "tmux").send(Target("mini/mesh:0.0", "x"), "hi there")
     cmds = [c[0][0][-1] for c in run.call_args_list]
-    assert cmds[0] == "tmux send-keys -t mesh:0.0 -l 'hi there'"
-    assert cmds[1] == "tmux send-keys -t mesh:0.0 Enter"
+    assert cmds[0].endswith("tmux send-keys -t mesh:0.0 -l 'hi there'")
+    assert cmds[1].endswith("tmux send-keys -t mesh:0.0 Enter")
+    assert cmds[0].startswith("PATH=")  # non-interactive ssh needs Homebrew tmux on PATH
 
 
 def test_tmux_send_no_submit():

@@ -39,11 +39,14 @@ import subprocess
 from .base import Backend, Target
 
 _SSH_OPTS = ["-o", "BatchMode=yes", "-o", "ConnectTimeout=6"]
+# Non-interactive SSH sessions on macOS get a minimal PATH: Homebrew / user-built
+# tmux (and uv, claude) are invisible unless we say where to look.
+_REMOTE_PATH = "PATH=/opt/homebrew/bin:/usr/local/bin:$HOME/.local/bin:$PATH"
 
 
 def _ssh(host: str, command: str, timeout: float = 15.0) -> str:
     proc = subprocess.run(
-        ["ssh", *_SSH_OPTS, host, command],
+        ["ssh", *_SSH_OPTS, host, f"{_REMOTE_PATH} {command}"],
         capture_output=True, text=True, timeout=timeout, check=False,
     )
     if proc.returncode != 0:
