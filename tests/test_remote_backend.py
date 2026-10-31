@@ -55,12 +55,22 @@ def test_terminal_enumerate_parses_window_ids():
     assert "osascript" in run.call_args[0][0][-1]
 
 
-def test_terminal_send_uses_do_script_by_window_id():
-    with mock.patch.object(subprocess, "run", return_value=_ok()) as run:
+def test_terminal_send_uses_do_script_then_separate_cr():
+    with mock.patch.object(subprocess, "run", return_value=_ok()) as run, \
+         mock.patch.object(remote.time, "sleep"):
         RemoteBackend("mini", "terminal").send(Target("mini/1436", "x"), 'say "hi"')
-    cmd = run.call_args[0][0][-1]
-    assert "do script" in cmd and "in window id 1436" in cmd and '\\"hi\\"' in cmd
-    assert "System Events" not in cmd  # no keystroke path, no Accessibility needed
+    cmds = [c[0][0][-1] for c in run.call_args_list]
+    assert len(cmds) == 2
+    assert "do script" in cmds[0] and "in window id 1436" in cmds[0] and '\\"hi\\"' in cmds[0]
+    assert "character id 13" in cmds[1] and "in window id 1436" in cmds[1]  # separate Enter
+    assert all("System Events" not in c for c in cmds)  # no keystroke path, no Accessibility needed
+
+
+def test_terminal_submit_sends_only_cr():
+    with mock.patch.object(subprocess, "run", return_value=_ok()) as run:
+        RemoteBackend("mini", "terminal").send(Target("mini/1436", "x"), "", submit=True)
+    cmds = [c[0][0][-1] for c in run.call_args_list]
+    assert len(cmds) == 1 and "character id 13" in cmds[0]
 
 
 def test_terminal_read_by_window_id():

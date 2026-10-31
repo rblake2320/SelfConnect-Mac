@@ -35,6 +35,7 @@ from __future__ import annotations
 
 import shlex
 import subprocess
+import time
 
 from .base import Backend, Target
 
@@ -150,10 +151,18 @@ end tell'''
                 _ssh(self.host, f"tmux send-keys -t {shlex.quote(ident)} Enter")
             return
         if submit:
-            # `do script ... in window id N` types the text and presses Return in
-            # that window without changing focus and without Accessibility.
-            script = f'tell application "Terminal" to do script "{_as_str(text)}" in window id {int(ident)}'
-            _ssh(self.host, _osa(script))
+            # `do script ... in window id N` types the text + newline without
+            # changing focus and without Accessibility. Claude Code treats a fast
+            # burst of characters as a *paste*, so the trailing newline can land
+            # as a literal newline instead of Enter (message sits in the box).
+            # A separate bare CR a moment later is always read as Enter; an
+            # extra Enter on an already-submitted prompt is a no-op.
+            if text:
+                script = f'tell application "Terminal" to do script "{_as_str(text)}" in window id {int(ident)}'
+                _ssh(self.host, _osa(script))
+                time.sleep(0.4)
+            _ssh(self.host, _osa(
+                f'tell application "Terminal" to do script (character id 13) in window id {int(ident)}'))
             return
         # Partial input needs keystrokes into the focused window. This is
         # TCC-gated (Accessibility for sshd-keygen-wrapper) and slow (one
