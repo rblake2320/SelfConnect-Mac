@@ -36,6 +36,12 @@ the text must appear in the transcript (after a `⏺`/`⎿` marker), not after t
 If it is still in the box, press Enter with `sc-mac --host mini --backend terminal submit 1436`
 (`do script ""` = a bare Return; verified on 2026-10-31).
 
+**Busy sessions swallow Enter.** If the target Claude Code session is mid-turn (a spinner line such as
+`✶ Working… (esc to interrupt)` is visible above the prompt), the injected text stays in the box and
+neither `do script` nor a bare CR submits it. Wait until the spinner is gone (poll `read` every ~10 s),
+then run `submit` again and re-read. Verified 2026-10-31: an ACK sat in the box for ~2 min until the
+mini finished its turn, then submitted.
+
 ## Gotchas
 
 - Inside `tell application "Terminal"`, the AppleScript word `tab` is Terminal's *tab class*, not the
