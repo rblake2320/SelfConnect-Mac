@@ -28,6 +28,14 @@ sc-mac --host mini send mesh:0.0 "echo hi"           # tmux pane
 4. tmux targets are the better choice when the remote session was started over SSH; Terminal targets
    are the only choice for sessions the user opened in GUI Terminal windows.
 
+## Always verify the message was *sent*
+
+A message that lands in the prompt box but is not submitted looks done from here and blocks the other
+session until a human presses Enter. After every `send --submit`, read the window back ~5 s later:
+the text must appear in the transcript (after a `⏺`/`⎿` marker), not after the `❯` prompt line.
+If it is still in the box, press Enter with `sc-mac --host mini --backend terminal submit 1436`
+(`do script ""` = a bare Return; verified on 2026-10-31).
+
 ## Gotchas
 
 - Inside `tell application "Terminal"`, the AppleScript word `tab` is Terminal's *tab class*, not the
