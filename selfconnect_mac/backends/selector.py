@@ -16,6 +16,7 @@ from .base import Backend
 from .cgevent import CGEventBackend
 from .iterm2 import ITerm2Backend
 from .tmux import TmuxBackend
+from .remote import RemoteBackend
 
 _REGISTRY: dict[str, type[Backend]] = {
     "iterm2": ITerm2Backend,
@@ -60,10 +61,17 @@ def available_names() -> list[str]:
 def find_backend_for_target(ident_hint: str) -> Backend | None:
     """Best-effort: pick a backend that can address `ident_hint`.
 
+    'host/ident' addresses a terminal on another Mac over SSH (RemoteBackend):
+    'mini/mesh:0.0' → remote tmux pane, 'mini/1436' → remote Terminal window id.
+
     tmux ids look like 'session:window.pane' or '%N';
     iTerm2 session uuids are 36-char dashed;
     CG window IDs are plain integers.
     """
+    if "/" in ident_hint:
+        host, rest = ident_hint.split("/", 1)
+        kind = "terminal" if rest.isdigit() else "tmux"
+        return RemoteBackend(host, kind=kind)
     if ":" in ident_hint or ident_hint.startswith("%"):
         if TmuxBackend.is_available():
             return TmuxBackend()

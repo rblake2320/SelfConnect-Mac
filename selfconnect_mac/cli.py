@@ -10,6 +10,10 @@ Auto-selects the best available backend if --backend is not given.
 Usage:
     python -m selfconnect_mac.cli backends
     python -m selfconnect_mac.cli --backend tmux list
+    python -m selfconnect_mac.cli --host mini list                      # tmux panes on the mini
+    python -m selfconnect_mac.cli --host mini --backend terminal list   # Terminal.app windows on the mini
+    python -m selfconnect_mac.cli --host mini --backend terminal read 1436
+    python -m selfconnect_mac.cli --host mini --backend terminal send 1436 "status?"
     python -m selfconnect_mac.cli send AGENT-A "hello" --submit
     python -m selfconnect_mac.cli spawn AGENT-B /path/to/repo
     python -m selfconnect_mac.cli bus-tail --agent AGENT-A
@@ -25,11 +29,24 @@ import sys
 import time
 
 
+def _pick_backend(args):
+    """--host wraps the chosen kind in RemoteBackend; otherwise local selection."""
+    from .backends.remote import RemoteBackend
+    from .backends.selector import auto_select, get_named
+
+    host = getattr(args, "host", None)
+    if host:
+        kind = "terminal" if (args.backend in ("terminal", "applescript")) else "tmux"
+        return RemoteBackend(host, kind=kind)
+    return get_named(args.backend) if args.backend else auto_select()
+
+
 def _resolve_target(backend, ident: str):
     """Try ident as a literal identifier first; if not found, treat as title fragment."""
     targets = backend.enumerate()
+    host = getattr(backend, "host", None)
     for t in targets:
-        if t.ident == ident:
+        if t.ident == ident or (host and t.ident == f"{host}/{ident}"):
             return t
     needle = ident.lower()
     matches = [t for t in targets if needle in t.title.lower()]
@@ -194,7 +211,9 @@ def cmd_peer_browse(args, _backend) -> int:
 
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(prog="sc-mac")
-    p.add_argument("--backend", choices=["iterm2", "tmux", "cgevent", "applescript"])
+    p.add_argument("--backend", choices=["iterm2", "tmux", "cgevent", "applescript", "terminal"])
+    p.add_argument("--host", help="operate on another Mac over SSH (ssh config alias or hostname); "
+                   "with --backend tmux (default) or terminal (Terminal.app windows by id)")
     sub = p.add_subparsers(dest="cmd", required=True)
 
     sub.add_parser("backends", help="show which backends are available")
@@ -310,7 +329,7 @@ def main(argv: list[str] | None = None) -> int:
         from . import BackendUnavailable, get_backend
 
         try:
-            backend = get_backend(args.backend)
+            backend = _pick_backend(args) if args.host else get_backend(args.backend)
         except BackendUnavailable as e:
             sys.stderr.write(f"error: {e}\n")
             return 2

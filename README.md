@@ -29,6 +29,10 @@ This repo is the Mac-compatible variant intended for `selfconnect-mac`. The Wind
 `PostMessage`/`PrintWindow` behavior still runs when imported on Windows, while macOS
 gets best-effort foreground automation through System Events.
 
+> **Remote Mac (2026-10-31)**: `sc-mac --host mini ...` drives tmux panes or Terminal.app
+> windows on a second Mac over SSH — the same `list/read/send/spawn` API, addressed as
+> `host/ident`. See `runbooks/mac_remote_terminal_over_ssh.md`.
+>
 > **v2 (2026-06-17)**: a new `selfconnect_mac/` package adds a pluggable backend
 > layer (iTerm2, tmux, CGEvent, AppleScript) plus Mac-native moat features that
 > Win32 has no analog for: `os_log` mesh bus, FSEvents push inbox, Bonjour peer
